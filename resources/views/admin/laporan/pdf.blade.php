@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ $title ?? 'Laporan Aset' }}</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; font-size: 10px; margin: 15px; }
+        h1 { text-align: center; font-size: 14px; margin-bottom: 2px; }
+        h3 { text-align: center; font-size: 11px; color: #555; margin-top: 0; margin-bottom: 2px; }
+        .subtitle { text-align: center; font-size: 9px; color: #888; }
+        .filter-info { text-align: center; font-size: 9px; color: #333; margin: 8px 0; padding: 4px; background: #f5f5f5; border-radius: 4px; }
+        .summary { display: flex; justify-content: space-around; margin: 8px 0; padding: 6px; background: #f0f7ff; border-radius: 4px; }
+        .summary .item { text-align: center; }
+        .summary .item .val { font-size: 12px; font-weight: bold; color: #1B4965; }
+        .summary .item .lbl { font-size: 8px; color: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 8px; }
+        th { background: #1B4965; color: #fff; padding: 5px 4px; text-align: left; font-size: 8px; }
+        td { padding: 4px; border-bottom: 1px solid #ddd; vertical-align: top; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .footer { text-align: center; margin-top: 15px; font-size: 8px; color: #888; }
+        @page { margin: 15mm; }
+    </style>
+</head>
+<body>
+    <div style="border-bottom: 2px solid #1B4965; padding-bottom: 8px; margin-bottom: 10px;">
+        <h1>PEMERINTAH KABUPATEN HALMAHERA BARAT</h1>
+        <h3>LAPORAN DATA ASET TANAH — JANG BANTAH</h3>
+        <p class="subtitle">Dicetak: {{ date('d F Y, H:i') }}</p>
+    </div>
+
+    @if(!empty($filterInfo))
+    <div class="filter-info">
+        <strong>Filter:</strong> {{ implode(' | ', $filterInfo) }}
+    </div>
+    @endif
+
+    <div class="summary">
+        <div class="item">
+            <div class="val">{{ number_format($filteredSummary['total']) }}</div>
+            <div class="lbl">TOTAL BIDANG</div>
+        </div>
+        <div class="item">
+            <div class="val">Rp {{ number_format($filteredSummary['nilai'], 0, ',', '.') }}</div>
+            <div class="lbl">TOTAL NILAI</div>
+        </div>
+        <div class="item">
+            <div class="val">{{ number_format($filteredSummary['luas'], 2) }} m²</div>
+            <div class="lbl">TOTAL LUAS</div>
+        </div>
+        <div class="item">
+            <div class="val">{{ number_format($filteredSummary['sertifikat']) }}</div>
+            <div class="lbl">BERSERTIFIKAT</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="text-center" style="width:25px;">#</th>
+                <th>Nomor Register</th>
+                <th>Nama Aset</th>
+                <th>Kecamatan</th>
+                <th>Desa</th>
+                <th>OPD</th>
+                <th class="text-right">Luas (m²)</th>
+                <th class="text-right">Nilai (Rp)</th>
+                <th>Status</th>
+                <th>Sertifikasi</th>
+                <th>Status Hukum</th>
+                <th>Tahun</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($asets as $i => $a)
+            @php
+                $isSertifikat = $a->sertifikasi && in_array($a->sertifikasi->status, ['terbit_sertifikat', 'selesai']);
+                $isSengketa = $a->pengamananHukum && $a->pengamananHukum->status_sengketa !== 'tidak_sengketa';
+            @endphp
+            <tr>
+                <td class="text-center">{{ $i + 1 }}</td>
+                <td>{{ $a->nomor_register }}</td>
+                <td>{{ $a->nama_aset }}</td>
+                <td>{{ $a->kecamatan?->nama ?? '-' }}</td>
+                <td>{{ $a->desa?->nama ?? '-' }}</td>
+                <td>{{ $a->opd?->singkatan ?? $a->opd?->nama ?? '-' }}</td>
+                <td class="text-right">{{ number_format($a->luas, 2) }}</td>
+                <td class="text-right">{{ number_format($a->nilai_aset, 0, ',', '.') }}</td>
+                <td>{{ strtoupper(str_replace('_', ' ', $a->status)) }}</td>
+                <td>{{ $a->sertifikasi?->status_label ?? 'Belum Ada' }}</td>
+                <td>{{ $isSengketa ? strtoupper(str_replace('_', ' ', $a->pengamananHukum->status_sengketa)) : 'Aman' }}</td>
+                <td class="text-center">{{ $a->tahun_perolehan ?? '-' }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr style="background:#1B4965;color:#fff;font-weight:bold;">
+                <td colspan="6" class="text-right">TOTAL</td>
+                <td class="text-right">{{ number_format($filteredSummary['luas'], 2) }}</td>
+                <td class="text-right">{{ number_format($filteredSummary['nilai'], 0, ',', '.') }}</td>
+                <td colspan="5"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="footer">
+        <p>Generated by JANG BANTAH — Jaringan Bank Tanah Pemkab. Halmahera Barat</p>
+        <p>Dicetak oleh {{ Auth::check() ? Auth::user()->name : 'Sistem' }} pada {{ date('d F Y, H:i:s') }}</p>
+    </div>
+</body>
+</html>
