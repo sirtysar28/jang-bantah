@@ -18,21 +18,21 @@ class LaporanController extends Controller
         $kecamatans = Kecamatan::orderBy('nama')->get();
         $opds = Opd::orderBy('nama')->get();
 
-        $query = Aset::withTrashed()->with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
+        $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
         $this->applyFilters($request, $query);
 
         $asets = $query->get();
 
         // Ringkasan sesuai filter
         $ringkasan = [
-            'total'        => Aset::withTrashed()->count(),
-            'nilai'        => Aset::withTrashed()->sum('nilai_aset'),
-            'luas'         => Aset::withTrashed()->sum('luas'),
-            'sertifikat'   => Aset::withTrashed()->whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count(),
-            'belum_sertifikat' => Aset::withTrashed()->whereDoesntHave('sertifikasi')->count(),
-            'proses_sertifikasi' => Aset::withTrashed()->whereHas('sertifikasi', fn($q) => $q->whereNotIn('status', ['terbit_sertifikat', 'selesai']))->count(),
-            'sengketa'     => Aset::withTrashed()->whereHas('pengamananHukum', fn($q) => $q->where('status_sengketa', '!=', 'tidak_sengketa'))->count(),
-            'aktif'        => Aset::withTrashed()->where('status', 'aktif')->count(),
+            'total'        => Aset::count(),
+            'nilai'        => Aset::sum('nilai_aset'),
+            'luas'         => Aset::sum('luas'),
+            'sertifikat'   => Aset::whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count(),
+            'belum_sertifikat' => Aset::whereDoesntHave('sertifikasi')->count(),
+            'proses_sertifikasi' => Aset::whereHas('sertifikasi', fn($q) => $q->whereNotIn('status', ['terbit_sertifikat', 'selesai']))->count(),
+            'sengketa'     => Aset::whereHas('pengamananHukum', fn($q) => $q->where('status_sengketa', '!=', 'tidak_sengketa'))->count(),
+            'aktif'        => Aset::where('status', 'aktif')->count(),
         ];
 
         // Ringkasan sesuai filter aktif
@@ -47,7 +47,7 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $query = Aset::withTrashed()->with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
+        $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
         $this->applyFilters($request, $query);
         $asets = $query->get();
 

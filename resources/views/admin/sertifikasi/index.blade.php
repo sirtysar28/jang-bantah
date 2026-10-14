@@ -57,7 +57,11 @@
                         <td style="font-size:.82rem;">{{ $s->nomor_sertifikat ?? '-' }}</td>
                         <td style="font-size:.82rem;">{{ $s->tanggal_terbit?->format('d/m/Y') ?? '-' }}</td>
                         <td>
-                            <a href="{{ route('admin.aset.show', $s->aset_id) }}" class="btn btn-sm btn-outline-primary" title="Detail Aset"><i class="fas fa-eye"></i></a>
+                            @if($s->aset)
+                                <a href="{{ route('admin.aset.show', $s->aset) }}" class="btn btn-sm btn-outline-primary" title="Detail Aset"><i class="fas fa-eye"></i></a>
+                            @else
+                                <button class="btn btn-sm btn-outline-secondary" disabled title="Aset tidak ditemukan"><i class="fas fa-eye-slash"></i></button>
+                            @endif
                         </td>
                     </tr>
                     @empty

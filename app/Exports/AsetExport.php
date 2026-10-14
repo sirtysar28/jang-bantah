@@ -27,7 +27,7 @@ class AsetExport implements FromCollection, WithHeadings, WithMapping, WithTitle
 
     public function collection()
     {
-        $query = Aset::withTrashed()->with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
+        $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
 
         if ($this->request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $this->request->kecamatan_id);

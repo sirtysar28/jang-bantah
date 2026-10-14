@@ -141,10 +141,15 @@
                     <tr>
                         <td class="text-muted">{{ $monitorings->firstItem() + $loop->iteration - 1 }}</td>
                         <td>
-                            <a href="{{ route('admin.aset.show', $m->aset) }}" class="text-decoration-none fw-500" style="font-size:.85rem;">
-                                {{ $m->aset?->nama_aset ?? '-' }}
-                            </a>
-                            <br><small class="text-muted">{{ $m->aset?->nomor_register ?? '' }}</small>
+                            @if($m->aset)
+                                <a href="{{ route('admin.aset.show', $m->aset) }}" class="text-decoration-none fw-500" style="font-size:.85rem;">
+                                    {{ $m->aset->nama_aset }}
+                                </a>
+                                <br><small class="text-muted">{{ $m->aset->nomor_register }}</small>
+                            @else
+                                <span class="text-muted fw-500" style="font-size:.85rem;">-</span>
+                                <br><small class="text-danger">Aset tidak ditemukan</small>
+                            @endif
                         </td>
                         <td>
                             <span class="badge bg-{{ $jenisBadge[$m->jenis] ?? 'secondary' }} text-capitalize">

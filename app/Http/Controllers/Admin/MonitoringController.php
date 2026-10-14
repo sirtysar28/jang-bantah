@@ -16,10 +16,12 @@ class MonitoringController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('aset', function ($q) use ($search) {
-                $q->where('nama_aset', 'like', "%{$search}%")
-                  ->orWhere('nomor_register', 'like', "%{$search}%");
-            })->orWhere('catatan', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('aset', function ($aq) use ($search) {
+                    $aq->where('nama_aset', 'like', "%{$search}%")
+                       ->orWhere('nomor_register', 'like', "%{$search}%");
+                })->orWhere('catatan', 'like', "%{$search}%");
+            });
         }
         if ($request->filled('jenis')) {
             $query->where('jenis', $request->jenis);

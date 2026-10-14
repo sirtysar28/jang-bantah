@@ -44,11 +44,16 @@
                     <tr>
                         <td class="text-muted">{{ $pemanfaatans->firstItem() + $loop->iteration - 1 }}</td>
                         <td>
-                            <a href="{{ route('admin.aset.show', $p->aset_id) }}" class="text-decoration-none fw-500" style="font-size:.85rem;">
-                                {{ $p->aset?->nama_aset ?? '-' }}
-                            </a>
-                            @if($p->aset?->nomor_register)
-                            <br><small class="text-muted">{{ $p->aset->nomor_register }}</small>
+                            @if($p->aset)
+                                <a href="{{ route('admin.aset.show', $p->aset) }}" class="text-decoration-none fw-500" style="font-size:.85rem;">
+                                    {{ $p->aset->nama_aset }}
+                                </a>
+                                @if($p->aset->nomor_register)
+                                <br><small class="text-muted">{{ $p->aset->nomor_register }}</small>
+                                @endif
+                            @else
+                                <span class="text-muted fw-500" style="font-size:.85rem;">-</span>
+                                <br><small class="text-danger">Aset tidak ditemukan/dihapus</small>
                             @endif
                         </td>
                         <td style="font-size:.85rem;">{{ $p->aset?->kecamatan?->nama ?? '-' }}</td>
@@ -64,7 +69,11 @@
                             <span class="badge bg-{{ $pemStatusBadge[$p->status] ?? 'secondary' }}">{{ ucfirst($p->status) }}</span>
                         </td>
                         <td>
-                            <a href="{{ route('admin.aset.show', $p->aset_id) }}" class="btn btn-sm btn-outline-primary" title="Detail Aset"><i class="fas fa-eye"></i></a>
+                            @if($p->aset)
+                                <a href="{{ route('admin.aset.show', $p->aset) }}" class="btn btn-sm btn-outline-primary" title="Detail Aset"><i class="fas fa-eye"></i></a>
+                            @else
+                                <button class="btn btn-sm btn-outline-secondary" disabled title="Aset tidak ditemukan"><i class="fas fa-eye-slash"></i></button>
+                            @endif
                         </td>
                     </tr>
                     @empty

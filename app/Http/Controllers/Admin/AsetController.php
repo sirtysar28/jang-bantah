@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\AdminNotificationService;
 use App\AuditLogService;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
@@ -96,6 +97,31 @@ class AsetController extends Controller
         $validated['created_by'] = Auth::id();
 
         Aset::create($validated);
+
+        // Notifikasi: pengajuan aset baru dari OPD masuk ke email admin
+        $user = Auth::user();
+        $aset = Aset::where('nomor_register', $validated['nomor_register'])->first();
+        if ($user && $user->isOpd()) {
+            AdminNotificationService::sendEmail(
+                'Pengajuan Aset Baru Menunggu Validasi',
+                [
+                    ['label' => 'Nama Aset', 'value' => $validated['nama_aset']],
+                    ['label' => 'Nomor Register', 'value' => $validated['nomor_register']],
+                    ['label' => 'Diajukan Oleh', 'value' => $user->name . ($user->opd?->nama_opd ? ' (' . $user->opd->nama_opd . ')' : '')],
+                    ['label' => 'Waktu', 'value' => now()->format('d/m/Y H:i')],
+                ],
+                $aset ? route('admin.aset.show', $aset) : route('admin.aset.index'),
+                'Review Pengajuan'
+            );
+            AdminNotificationService::notifyUsers(
+                AdminNotificationService::adminUserIds(),
+                'Pengajuan Aset Baru',
+                "{$user->name} mengajukan aset baru \"{$validated['nama_aset']}\" (No. Reg: {$validated['nomor_register']}) yang menunggu validasi.",
+                'warning',
+                ['aset_id' => $aset?->id]
+            );
+        }
+
         return redirect()->route('admin.aset.index')->with('success', 'Aset berhasil ditambahkan.');
     }
 
@@ -175,6 +201,24 @@ class AsetController extends Controller
     public function validateAset(Aset $aset)
     {
         $aset->update(['is_validated' => true]);
+
+        // Email balik ke pengaju (OPD) bahwa asetnya sudah divalidasi
+        $pengaju = $aset->creator;
+        if ($pengaju && $pengaju->email && $pengaju->id !== Auth::id()) {
+            AdminNotificationService::sendTo(
+                $pengaju->email,
+                'Aset Telah Divalidasi',
+                [
+                    ['label' => 'Nama Aset', 'value' => $aset->nama_aset],
+                    ['label' => 'Nomor Register', 'value' => $aset->nomor_register],
+                    ['label' => 'Divalidasi Oleh', 'value' => Auth::user()->name],
+                    ['label' => 'Waktu', 'value' => now()->format('d/m/Y H:i')],
+                ],
+                route('admin.aset.show', $aset),
+                'Lihat Aset'
+            );
+        }
+
         return redirect()->back()->with('success', 'Aset berhasil divalidasi.');
     }
 }

@@ -38,6 +38,7 @@ class PemanfaatanController extends Controller
             'tanggal_selesai' => 'nullable|date',
             'dokumen_perjanjian' => 'nullable|file|mimes:pdf|max:5120',
             'keterangan' => 'nullable|string',
+            'status' => 'nullable|in:aktif,tidak_aktif,selesai',
         ]);
 
         if ($request->hasFile('dokumen_perjanjian')) {
@@ -61,8 +62,16 @@ class PemanfaatanController extends Controller
             'tanggal_mulai' => 'nullable|date',
             'tanggal_selesai' => 'nullable|date',
             'status' => 'required|in:aktif,tidak_aktif,selesai',
+            'dokumen_perjanjian' => 'nullable|file|mimes:pdf|max:5120',
             'keterangan' => 'nullable|string',
         ]);
+
+        if ($request->hasFile('dokumen_perjanjian')) {
+            if ($pemanfaatan->dokumen_perjanjian) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pemanfaatan->dokumen_perjanjian);
+            }
+            $validated['dokumen_perjanjian'] = $request->file('dokumen_perjanjian')->store('pemanfaatan', 'public');
+        }
 
         $pemanfaatan->update($validated);
         return redirect()->back()->with('success', 'Data pemanfaatan berhasil diperbarui.');

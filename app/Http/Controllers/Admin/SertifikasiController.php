@@ -12,7 +12,8 @@ class SertifikasiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Sertifikasi::with(['aset.kecamatan', 'aset.opd']);
+        // Hanya tampilkan sertifikasi yang aset induknya masih ada (belum dihapus)
+        $query = Sertifikasi::with(['aset.kecamatan', 'aset.opd'])->whereHas('aset');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

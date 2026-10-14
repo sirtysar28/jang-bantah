@@ -22,6 +22,7 @@ Route::get('/peta-publik', [HomeController::class, 'mapPublic'])->name('map.publ
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/captcha/refresh', [AuthController::class, 'refreshCaptcha'])->name('captcha.refresh');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
@@ -98,5 +99,7 @@ Route::middleware(['auth', 'role:super_admin,admin_aset,opd,pimpinan'])->prefix(
 
     // Settings
     Route::get('setting', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('setting.index')->middleware('role:super_admin');
+    Route::post('setting/smtp', [App\Http\Controllers\Admin\SettingController::class, 'updateSmtp'])->name('setting.smtp')->middleware('role:super_admin');
+    Route::post('setting/test-mail', [App\Http\Controllers\Admin\SettingController::class, 'testMail'])->name('setting.test-mail')->middleware('role:super_admin');
     Route::post('setting/backup', [App\Http\Controllers\Admin\SettingController::class, 'backupDatabase'])->name('setting.backup')->middleware('role:super_admin');
 });

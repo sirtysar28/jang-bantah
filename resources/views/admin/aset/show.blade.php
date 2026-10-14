@@ -326,16 +326,25 @@
             <!-- Pemanfaatan -->
             <div class="tab-pane fade" id="pemanfaatan">
                 <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-handshake me-1"></i> {{ $aset->pemanfaatan ? 'Edit Data Pemanfaatan' : 'Tambah Data Pemanfaatan' }}</span>
+                        @if($aset->pemanfaatan)
+                        <span class="badge bg-{{ ['aktif' => 'success', 'tidak_aktif' => 'secondary', 'selesai' => 'info'][$aset->pemanfaatan->status] ?? 'secondary' }}">{{ ucfirst($aset->pemanfaatan->status) }}</span>
+                        @endif
+                    </div>
                     <div class="card-body">
                         @if($aset->pemanfaatan)
-                        <table class="table table-sm">
-                            <tr><td>Kategori</td><td><span class="badge bg-primary">{{ strtoupper(str_replace('_', ' ', $aset->pemanfaatan->kategori)) }}</span></td></tr>
-                            <tr><td>Nama Pihak</td><td>{{ $aset->pemanfaatan->nama_pihak ?? '-' }}</td></tr>
-                            <tr><td>Potensi PAD</td><td>Rp {{ number_format($aset->pemanfaatan->nilai_potensi_pad, 0, ',', '.') }}</td></tr>
-                            <tr><td>Realisasi</td><td>Rp {{ number_format($aset->pemanfaatan->nilai_realisasi, 0, ',', '.') }}</td></tr>
-                        </table>
+                            <form method="POST" action="{{ route('admin.pemanfaatan.update', $aset->pemanfaatan) }}" enctype="multipart/form-data">
+                                @csrf
+                                @include('admin.pemanfaatan._form', ['p' => $aset->pemanfaatan])
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Perbarui Data Pemanfaatan</button>
+                            </form>
                         @else
-                        <p class="text-center text-muted py-3">Belum ada data pemanfaatan.</p>
+                            <form method="POST" action="{{ route('admin.pemanfaatan.store', $aset) }}" enctype="multipart/form-data">
+                                @csrf
+                                @include('admin.pemanfaatan._form', ['p' => null])
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Simpan Data Pemanfaatan</button>
+                            </form>
                         @endif
                     </div>
                 </div>

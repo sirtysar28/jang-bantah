@@ -47,7 +47,7 @@
         <!-- Hero Content -->
         <div class="container hero-content position-relative" style="z-index:2;">
             <div class="row align-items-center hero-row">
-                <div class="col-lg-7 text-white animate-fade-up">
+                <div class="col-lg-12 text-white animate-fade-up">
                     <span class="badge mb-3 px-3 py-2" style="font-size:.75rem; background:rgba(255,255,255,.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.25); color:#fff;">
                         <i class="fas fa-landmark me-1"></i> PEMERINTAH KABUPATEN HALMAHERA BARAT
                     </span>
@@ -67,42 +67,6 @@
                         <a href="{{ route('map.public') }}" class="btn btn-outline-light" style="border-radius:50px; padding:12px 28px;">
                             <i class="fas fa-map me-2"></i>Lihat Peta Aset
                         </a>
-                    </div>
-                </div>
-                <div class="col-lg-5 text-center mt-5 mt-lg-0">
-                    <div class="hero-visual-wrapper position-relative d-inline-block">
-                        <!-- Orbiting Icons Container -->
-                        <div class="orbit-container">
-                            <div class="orbit-ring"></div>
-                            <div class="orbit-icon orbit-icon-1">
-                                <div class="orbit-icon-inner">
-                                    <i class="fas fa-shield-halved"></i>
-                                    <span>Aman</span>
-                                </div>
-                            </div>
-                            <div class="orbit-icon orbit-icon-2">
-                                <div class="orbit-icon-inner">
-                                    <i class="fas fa-network-wired"></i>
-                                    <span>Terintegrasi</span>
-                                </div>
-                            </div>
-                            <div class="orbit-icon orbit-icon-3">
-                                <div class="orbit-icon-inner">
-                                    <i class="fas fa-border-all"></i>
-                                    <span>Perpetakan</span>
-                                </div>
-                            </div>
-                            <div class="orbit-icon orbit-icon-4">
-                                <div class="orbit-icon-inner">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span>Produktif</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Center Image -->
-                        <div class="hero-floating-img">
-                            <img src="{{ asset('favicon.png') }}" alt="Logo JANG BANTAH" class="hero-center-img">
-                        </div>
                     </div>
                 </div>
             </div>
@@ -387,141 +351,6 @@
         z-index: 5;
     }
 
-    /* ════════ HERO FLOATING IMAGE & ORBIT ════════ */
-    .hero-visual-wrapper {
-        width: 340px;
-        height: 340px;
-    }
-    @media (max-width: 991px) {
-        .hero-visual-wrapper { width: 280px; height: 280px; }
-    }
-    @media (max-width: 575px) {
-        .hero-visual-wrapper { width: 240px; height: 240px; }
-    }
-    .hero-center-img {
-        width: 160px;
-        height: 160px;
-        object-fit: contain;
-        border-radius: 30px;
-        filter: drop-shadow(0 10px 30px rgba(0,20,60,.5));
-        background: rgba(255,255,255,.95);
-        padding: 8px;
-    }
-    @media (max-width: 991px) {
-        .hero-center-img { width: 130px; height: 130px; border-radius: 24px; }
-    }
-    @media (max-width: 575px) {
-        .hero-center-img { width: 110px; height: 110px; border-radius: 20px; }
-    }
-    .hero-floating-img {
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-        animation: floatImage 3s ease-in-out infinite;
-    }
-    @keyframes floatImage {
-        0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-        50% { transform: translate(-50%, -50%) translateY(-15px); }
-    }
-
-    /* Orbit Container & Ring */
-    .orbit-container {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        animation: orbitSpin 20s linear infinite;
-    }
-    .orbit-ring {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 280px; height: 280px;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        border: 2px dashed rgba(255,255,255,.15);
-    }
-    @media (max-width: 991px) {
-        .orbit-ring { width: 230px; height: 230px; }
-    }
-    @media (max-width: 575px) {
-        .orbit-ring { width: 190px; height: 190px; }
-    }
-    @keyframes orbitSpin {
-        0%   { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    /* Orbit Icons — positioned with translate only (no rotate!) so counter-spin works perfectly */
-    .orbit-icon {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 70px; height: 70px;
-    }
-    @media (max-width: 991px) {
-        .orbit-icon { width: 60px; height: 60px; }
-    }
-    @media (max-width: 575px) {
-        .orbit-icon { width: 52px; height: 52px; }
-    }
-    /* Aman = top, Terintegrasi = right, Perpetakan = bottom, Produktif = left */
-    .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-140px); }
-    .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 140px); }
-    .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 140px); }
-    .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-140px); }
-    @media (max-width: 991px) {
-        .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-115px); }
-        .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 115px); }
-        .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 115px); }
-        .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-115px); }
-    }
-    @media (max-width: 575px) {
-        .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-95px); }
-        .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 95px); }
-        .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 95px); }
-        .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-95px); }
-    }
-
-    /* Counter-spin inner — text stays upright */
-    .orbit-icon-inner {
-        width: 100%; height: 100%;
-        border-radius: 50%;
-        background: rgba(0,77,153,.25);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255,255,255,.3);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        box-shadow: 0 4px 20px rgba(0,20,60,.3);
-        transition: all .3s ease;
-        animation: counterSpinInner 20s linear infinite;
-    }
-    .orbit-icon-inner:hover {
-        background: rgba(0,77,153,.45);
-        border-color: var(--gold);
-        transform: scale(1.15) rotate(0deg);
-        box-shadow: 0 6px 25px rgba(0,20,60,.4);
-    }
-    .orbit-icon-inner i {
-        font-size: 1.1rem;
-        margin-bottom: 2px;
-    }
-    .orbit-icon-inner span {
-        font-size: .5rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-        opacity: .9;
-    }
-    @media (max-width: 575px) {
-        .orbit-icon-inner i { font-size: .95rem; }
-        .orbit-icon-inner span { font-size: .42rem; }
-    }
-    @keyframes counterSpinInner {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(-360deg); }
-    }
-
     /* ════════ WORKFLOW STEP ════════ */
     .workflow-step {
         width: 50px; height: 50px;
@@ -581,15 +410,6 @@
         .hero-content p {
             text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.85) !important;
         }
-        /* Orbit visual lebih kecil di mobile */
-        .hero-visual-wrapper { width: 230px; height: 230px; }
-        .hero-center-img { width: 110px; height: 110px; }
-        .orbit-ring { width: 180px; height: 180px; }
-        .orbit-icon { width: 50px; height: 50px; }
-        .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-90px); }
-        .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 90px); }
-        .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 90px); }
-        .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-90px); }
     }
 
     @media (max-width: 575px) {
@@ -598,29 +418,11 @@
         .hero-content .lead { font-size: 1rem; }
         .hero-content p { font-size: .88rem; }
         .hero-content .btn { padding: 9px 18px !important; font-size: .82rem !important; }
-        .hero-visual-wrapper { width: 175px; height: 175px; }
-        .hero-center-img { width: 82px; height: 82px; border-radius: 18px; }
-        .orbit-ring { width: 140px; height: 140px; }
-        .orbit-icon { width: 42px; height: 42px; }
-        .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-70px); }
-        .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 70px); }
-        .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 70px); }
-        .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-70px); }
-        .orbit-icon-inner i { font-size: .85rem; }
-        .orbit-icon-inner span { font-size: .4rem; }
     }
 
     @media (max-width: 360px) {
         .hero-content h1 { font-size: 1.7rem; }
         .hero-content .btn { padding: 8px 14px !important; font-size: .78rem !important; }
-        .hero-visual-wrapper { width: 150px; height: 150px; }
-        .hero-center-img { width: 70px; height: 70px; }
-        .orbit-ring { width: 120px; height: 120px; }
-        .orbit-icon { width: 38px; height: 38px; }
-        .orbit-icon-1 { transform: translate(-50%, -50%) translateY(-60px); }
-        .orbit-icon-2 { transform: translate(-50%, -50%) translateX( 60px); }
-        .orbit-icon-3 { transform: translate(-50%, -50%) translateY( 60px); }
-        .orbit-icon-4 { transform: translate(-50%, -50%) translateX(-60px); }
     }
 </style>
 @endpush

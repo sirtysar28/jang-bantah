@@ -94,6 +94,70 @@
             font-weight: 600;
             text-decoration: underline;
         }
+
+        /* ════════ CAPTCHA ════════ */
+        .captcha-box {
+            flex: 1;
+            height: 52px;
+            border-radius: 10px;
+            background: repeating-linear-gradient(45deg, #1B4965 0, #1B4965 8px, #14506e 8px, #14506e 16px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,.4);
+            user-select: none;
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 4px;
+        }
+        .captcha-box::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(transparent 46%, rgba(255,255,255,.3) 46%, rgba(255,255,255,.3) 54%, transparent 54%);
+            pointer-events: none;
+        }
+        .captcha-box span {
+            display: inline-block;
+        }
+        .btn-captcha-refresh {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            color: #1B4965;
+            width: 52px;
+            height: 52px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-captcha-refresh:hover {
+            background: #1B4965;
+            color: #fff;
+            transform: rotate(90deg);
+        }
+
+        /* ════════ LOGIN FOOTER ════════ */
+        .login-footer {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #ececec;
+            text-align: center;
+            font-size: .78rem;
+            color: #6c757d;
+        }
+        .login-footer a {
+            color: #1B4965;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .login-footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -114,7 +178,7 @@
             <div class="session-error">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h6>Autentikasi Gagal</h6>
-                <p>{{ $errors->first('email') ?? $errors->first('password') ?? 'Silakan coba lagi.' }}</p>
+                <p>{{ $errors->first() }}</p>
                 <a href="{{ route('login') }}" class="d-block mt-2"><i class="fas fa-redo me-1"></i>Coba Lagi</a>
             </div>
             @endif
@@ -144,6 +208,23 @@
                     <small class="text-danger" style="font-size:.8rem;">{{ $message }}</small>
                     @enderror
                 </div>
+                <div class="mb-4">
+                    <label class="form-label fw-500" style="font-size:.85rem;">Kode Keamanan (Captcha)</label>
+                    <div class="d-flex gap-2 align-items-center mb-2">
+                        <div class="captcha-box" id="captchaBox" aria-label="Kode captcha">
+                            @foreach($captcha as $c)
+                                <span style="transform: rotate({{ $c['rotate'] }}deg) translateY({{ $c['offset'] }}px);">{{ $c['char'] }}</span>
+                            @endforeach
+                        </div>
+                        <button type="button" class="btn-captcha-refresh" id="refreshCaptcha" title="Ganti kode captcha">
+                            <i class="fas fa-rotate-right"></i>
+                        </button>
+                    </div>
+                    <input type="text" name="captcha" class="form-control" style="border-radius:10px; letter-spacing:4px; text-transform:uppercase; font-weight:600;" maxlength="5" required placeholder="Masukkan 5 karakter di atas" autocomplete="off">
+                    @error('captcha')
+                    <small class="text-danger" style="font-size:.8rem;">{{ $message }}</small>
+                    @enderror
+                </div>
                 <button type="submit" class="btn btn-login">
                     <i class="fas fa-sign-in-alt me-2"></i>Masuk
                 </button>
@@ -154,6 +235,10 @@
                     <i class="fas fa-arrow-left me-1"></i> Kembali ke Website
                 </a>
             </div>
+        </div>
+        <div class="login-footer">
+            <div>&copy; {{ date('Y') }} JANG BANTAH &mdash; Pemkab. Halmahera Barat. All rights reserved.</div>
+            <div>Powered by <a href="https://ciptakaryadigital.id" target="_blank" rel="noopener">Cipta Karya Digital</a></div>
         </div>
     </div>
 
@@ -173,6 +258,30 @@
                 passwordInput.type = 'password';
                 eyeIcon.classList.remove('fa-eye-slash');
                 eyeIcon.classList.add('fa-eye');
+            }
+        });
+
+        // Refresh captcha via AJAX
+        const refreshCaptchaBtn = document.getElementById('refreshCaptcha');
+        refreshCaptchaBtn.addEventListener('click', async function() {
+            const icon = refreshCaptchaBtn.querySelector('i');
+            icon.classList.add('fa-spin');
+            try {
+                const res = await fetch('{{ route('captcha.refresh') }}', { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                const box = document.getElementById('captchaBox');
+                box.innerHTML = '';
+                data.captcha.forEach(c => {
+                    const span = document.createElement('span');
+                    span.style.transform = `rotate(${c.rotate}deg) translateY(${c.offset}px)`;
+                    span.textContent = c.char;
+                    box.appendChild(span);
+                });
+                document.querySelector('input[name="captcha"]').value = '';
+            } catch (e) {
+                location.reload();
+            } finally {
+                icon.classList.remove('fa-spin');
             }
         });
     </script>
