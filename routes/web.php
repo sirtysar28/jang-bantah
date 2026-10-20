@@ -102,4 +102,8 @@ Route::middleware(['auth', 'role:super_admin,admin_aset,opd,pimpinan'])->prefix(
     Route::post('setting/smtp', [App\Http\Controllers\Admin\SettingController::class, 'updateSmtp'])->name('setting.smtp')->middleware('role:super_admin');
     Route::post('setting/test-mail', [App\Http\Controllers\Admin\SettingController::class, 'testMail'])->name('setting.test-mail')->middleware('role:super_admin');
     Route::post('setting/backup', [App\Http\Controllers\Admin\SettingController::class, 'backupDatabase'])->name('setting.backup')->middleware('role:super_admin');
+
+    // Web Terminal (pengganti terminal cPanel — khusus Super Admin)
+    Route::get('terminal', [App\Http\Controllers\Admin\TerminalController::class, 'index'])->name('terminal.index')->middleware('role:super_admin');
+    Route::post('terminal/run', [App\Http\Controllers\Admin\TerminalController::class, 'run'])->name('terminal.run')->middleware('role:super_admin');
 });

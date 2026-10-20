@@ -344,6 +344,9 @@
             <a href="{{ route('admin.setting.index') }}" class="nav-link">
                 <i class="fas fa-cog"></i> Pengaturan Sistem
             </a>
+            <a href="{{ route('admin.terminal.index') }}" class="nav-link {{ request()->routeIs('admin.terminal.*') ? 'active' : '' }}">
+                <i class="fas fa-terminal"></i> Terminal
+            </a>
             @endif
 
             <div class="mt-4 px-3">
