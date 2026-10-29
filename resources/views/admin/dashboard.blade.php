@@ -4,45 +4,45 @@
 @section('content')
 <!-- KPI Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin blue">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Total Nilai Aset</div>
-                    <div class="stat-value" style="color:var(--primary);">{{ 'Rp ' . number_format($totalNilai, 0, ',', '.') }}</div>
+                    <div class="stat-value" style="color:var(--primary);" data-count="{{ $totalNilai }}" data-prefix="Rp ">Rp 0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--primary);"><i class="fas fa-money-bill-wave"></i></div>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin green">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Jumlah Bidang</div>
-                    <div class="stat-value" style="color:var(--success);">{{ number_format($totalAset) }}</div>
+                    <div class="stat-value" style="color:var(--success);" data-count="{{ $totalAset }}">0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--success);"><i class="fas fa-map-marked-alt"></i></div>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin blue">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Sudah Sertifikat</div>
-                    <div class="stat-value" style="color:var(--primary);">{{ number_format($sudahSertifikat) }}</div>
+                    <div class="stat-value" style="color:var(--primary);" data-count="{{ $sudahSertifikat }}">0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--info);"><i class="fas fa-certificate"></i></div>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin orange">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Belum Sertifikat</div>
-                    <div class="stat-value" style="color:var(--warning);">{{ number_format($belumSertifikat) }}</div>
+                    <div class="stat-value" style="color:var(--warning);" data-count="{{ $belumSertifikat }}">0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--warning);"><i class="fas fa-clock"></i></div>
             </div>
@@ -51,23 +51,23 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin red">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Sengketa</div>
-                    <div class="stat-value" style="color:var(--danger);">{{ number_format($sengketa) }}</div>
+                    <div class="stat-value" style="color:var(--danger);" data-count="{{ $sengketa }}">0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--danger);"><i class="fas fa-gavel"></i></div>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
+    <div class="col-lg-3 col-md-6 jb-reveal">
         <div class="stat-card-admin blue">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-label">Proses BPN</div>
-                    <div class="stat-value" style="color:var(--info);">{{ number_format($prosesBPN) }}</div>
+                    <div class="stat-value" style="color:var(--info);" data-count="{{ $prosesBPN }}">0</div>
                 </div>
                 <div class="stat-icon" style="background:var(--info);"><i class="fas fa-file-signature"></i></div>
             </div>
@@ -77,7 +77,7 @@
 
 <!-- Charts Row -->
 <div class="row g-3 mb-4">
-    <div class="col-lg-8">
+    <div class="col-lg-8 jb-reveal">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-chart-bar me-2"></i>Riwayat Penambahan Aset</span>
@@ -87,7 +87,7 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4">
+    <div class="col-lg-4 jb-reveal">
         <div class="card">
             <div class="card-header">
                 <span><i class="fas fa-chart-pie me-2"></i>Status Sertifikasi</span>
@@ -101,7 +101,7 @@
 
 <!-- Monitoring & Sebaran -->
 <div class="row g-3 mb-4">
-    <div class="col-lg-4">
+    <div class="col-lg-4 jb-reveal">
         <div class="card">
             <div class="card-header"><span><i class="fas fa-tasks me-2"></i>Progress Monitoring</span></div>
             <div class="card-body">
@@ -112,14 +112,14 @@
                         <span>{{ number_format($progress, 1) }}%</span>
                     </div>
                     <div class="progress progress-jb">
-                        <div class="progress-bar bg-{{ $progress > 70 ? 'success' : ($progress > 40 ? 'info' : 'warning') }}" style="width:{{ $progress }}%"></div>
+                        <div class="progress-bar bg-{{ $progress > 70 ? 'success' : ($progress > 40 ? 'info' : 'warning') }}" data-width="{{ $progress }}"></div>
                     </div>
                 </div>
                 @endforeach
             </div>
         </div>
     </div>
-    <div class="col-lg-8">
+    <div class="col-lg-8 jb-reveal">
         <div class="card">
             <div class="card-header"><span><i class="fas fa-chart-bar me-2"></i>Sebaran Aset per Kecamatan</span></div>
             <div class="card-body">
@@ -131,7 +131,7 @@
 
 <!-- Notifikasi -->
 @if($notifikasis->count() > 0)
-<div class="card">
+<div class="card jb-reveal">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-bell me-2"></i>Notifikasi Terbaru</span>
         <a href="{{ route('admin.notifikasi.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
@@ -160,6 +160,12 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+    // Animasi chart yang lebih halus & lembut
+    if (window.Chart) {
+        Chart.defaults.animation = { duration: 1300, easing: 'easeOutQuart' };
+        Chart.defaults.font.family = "'Inter', sans-serif";
+    }
+
     // Chart: Penambahan Aset per Tahun Perolehan
     new Chart(document.getElementById('chartAset'), {
         type: 'bar',

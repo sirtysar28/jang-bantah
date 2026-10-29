@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
         :root {
@@ -22,9 +22,63 @@
             --warning: #F39C12;
             --danger: #E74C3C;
             --info: #3498DB;
+            --ease-smooth: cubic-bezier(.22, .61, .36, 1);
+            --ease-out-expo: cubic-bezier(.16, 1, .3, 1);
         }
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--body-bg); overflow-x: hidden; }
+        body {
+            background: var(--body-bg);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        /* Heading memakai Sora, body Inter — teks smooth & clean */
+        h1, h2, h3, h4, h5, h6,
+        .font-header, .card-header, .stat-value, .sidebar-brand h5 {
+            font-family: 'Sora', 'Inter', sans-serif !important;
+            letter-spacing: -.01em;
+        }
+
+        /* ═══════════ LATAR PARALLAX (orb blur mengikuti kursor & scroll) ═══════════ */
+        .jb-bg-decor {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .jb-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            will-change: transform;
+        }
+        .jb-orb.o1 { width: 480px; height: 480px; top: -160px; right: -120px; background: rgba(95, 168, 211, .28); }
+        .jb-orb.o2 { width: 420px; height: 420px; bottom: -140px; left: 220px; background: rgba(27, 73, 101, .14); }
+        .jb-orb.o3 { width: 360px; height: 360px; top: 38%; left: -140px; background: rgba(95, 168, 211, .18); }
+
+        /* ═══════════ ANIMASI REVEAL HALUS (staggered) ═══════════ */
+        /* elemen baru disembunyikan hanya jika JS aktif (class html.js) */
+        html.js .jb-reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            will-change: opacity, transform;
+        }
+        html.js .jb-reveal.jb-in {
+            opacity: 1;
+            transform: none;
+            transition: opacity .65s var(--ease-out-expo), transform .65s var(--ease-out-expo);
+            transition-delay: var(--jb-delay, 0s);
+        }
+        .jb-reveal.jb-in { opacity: 1; transform: none; }
+        .content-wrapper {
+            animation: jb-page-in .55s var(--ease-out-expo) both;
+        }
+        @keyframes jb-page-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: none; }
+        }
 
         /* Sidebar */
         .sidebar {
@@ -35,8 +89,18 @@
             height: 100vh;
             background: var(--sidebar-bg);
             z-index: 1000;
-            transition: transform .3s;
+            transition: transform .35s var(--ease-smooth);
             overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            top: -30%; right: -70px;
+            width: 260px; height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(95,168,211,.22), transparent 70%);
+            pointer-events: none;
         }
         .sidebar-brand {
             padding: 20px;
@@ -66,14 +130,19 @@
             color: rgba(255,255,255,.7);
             text-decoration: none;
             font-size: .85rem;
-            transition: all .2s;
+            transition: all .25s var(--ease-smooth);
             border-left: 3px solid transparent;
         }
-        .sidebar-nav .nav-link:hover { background: var(--sidebar-hover); color: #fff; }
+        .sidebar-nav .nav-link:hover {
+            background: var(--sidebar-hover);
+            color: #fff;
+            transform: translateX(3px);
+        }
         .sidebar-nav .nav-link.active {
             background: var(--sidebar-hover);
             color: var(--sidebar-active);
             border-left-color: var(--sidebar-active);
+            transform: none;
         }
         .sidebar-nav .nav-link i { width: 20px; margin-right: 12px; text-align: center; }
         .sidebar-nav .nav-link .badge {
@@ -127,6 +196,8 @@
             margin-left: 260px;
             padding-top: 60px;
             min-height: 100vh;
+            position: relative;
+            z-index: 1;
         }
         .content-wrapper { padding: 24px; }
 
@@ -136,7 +207,9 @@
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,.06);
             margin-bottom: 24px;
+            transition: box-shadow .3s var(--ease-smooth), transform .3s var(--ease-smooth);
         }
+        .card:hover { box-shadow: 0 8px 26px rgba(13,43,62,.1); }
         .card-header {
             background: #fff;
             border-bottom: 1px solid #eee;
@@ -153,6 +226,11 @@
             box-shadow: 0 2px 10px rgba(0,0,0,.06);
             position: relative;
             overflow: hidden;
+            transition: transform .3s var(--ease-smooth), box-shadow .3s var(--ease-smooth);
+        }
+        .stat-card-admin:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 32px rgba(13,43,62,.14);
         }
         .stat-card-admin::after {
             content: '';
@@ -178,14 +256,20 @@
 
         /* Progress Bar */
         .progress-jb { height: 8px; border-radius: 4px; background: #e9ecef; }
-        .progress-jb .progress-bar { border-radius: 4px; }
+        .progress-jb .progress-bar {
+            border-radius: 4px;
+            width: 0;
+            transition: width 1.1s var(--ease-out-expo);
+        }
 
         /* Badge */
         .badge-sertifikasi { padding: 5px 12px; border-radius: 20px; font-size: .75rem; font-weight: 500; }
 
         /* Table */
         .table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; color: #888; }
-        .table td { vertical-align: middle; font-size: .85rem; }
+        .table td { vertical-align: middle; font-size: .85rem; transition: background .18s ease; }
+        .table tbody tr { transition: background .18s ease; }
+        .table tbody tr:hover { background: rgba(95,168,211,.06); }
 
         /* ════════ PAGINATION (dinormalisasi di semua halaman admin) ════════ */
         .pagination {
@@ -258,8 +342,16 @@
             }
         }
     </style>
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
+    <!-- Latar parallax (orb blur, non-interaktif) -->
+    <div class="jb-bg-decor" aria-hidden="true">
+        <div class="jb-orb o1" data-depth="0.035"></div>
+        <div class="jb-orb o2" data-depth="-0.025"></div>
+        <div class="jb-orb o3" data-depth="0.05"></div>
+    </div>
+
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
@@ -425,6 +517,105 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        /* ═══════════════════════════════════════════════════════
+           JANG BANTAH — Animasi halus + parallax dashboard
+           ═══════════════════════════════════════════════════════ */
+        (function () {
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            /* ---------- 1. Reveal bertahap saat elemen masuk viewport ---------- */
+            const revealEls = document.querySelectorAll('.jb-reveal');
+            if (!reduceMotion && revealEls.length) {
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        const el = entry.target;
+                        // stagger otomatis: elemen berdekatan diberi jeda berurutan
+                        const siblings = Array.from(el.parentElement?.children || []).filter(c => c.classList.contains('jb-reveal'));
+                        const idx = Math.max(0, siblings.indexOf(el));
+                        el.style.setProperty('--jb-delay', (Math.min(idx, 6) * 0.09) + 's');
+                        el.classList.add('jb-in');
+                        io.unobserve(el);
+                    });
+                }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+                revealEls.forEach(el => io.observe(el));
+            } else {
+                revealEls.forEach(el => el.classList.add('jb-in'));
+            }
+
+            /* ---------- 2. Parallax orb: mengikuti kursor + scroll ---------- */
+            const orbs = document.querySelectorAll('.jb-orb');
+            if (!reduceMotion && orbs.length) {
+                let mx = 0, my = 0, sy = window.scrollY, raf = null;
+
+                function renderOrbs() {
+                    raf = null;
+                    orbs.forEach(orb => {
+                        const depth = parseFloat(orb.dataset.depth || 0.03);
+                        const x = mx * depth * 100;
+                        const y = my * depth * 100 + sy * Math.abs(depth) * 0.6;
+                        orb.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                    });
+                }
+                function queue() { if (!raf) raf = requestAnimationFrame(renderOrbs); }
+
+                if (window.matchMedia('(pointer: fine)').matches) {
+                    document.addEventListener('mousemove', (e) => {
+                        mx = e.clientX / window.innerWidth - .5;
+                        my = e.clientY / window.innerHeight - .5;
+                        queue();
+                    }, { passive: true });
+                }
+                window.addEventListener('scroll', () => { sy = window.scrollY; queue(); }, { passive: true });
+                renderOrbs();
+            }
+
+            /* ---------- 3. Count-up angka statistik ---------- */
+            const counters = document.querySelectorAll('[data-count]');
+            if (counters.length) {
+                const fmt = new Intl.NumberFormat('id-ID');
+                const animate = (el) => {
+                    if (reduceMotion) { // langsung tampilkan nilai akhir
+                        el.textContent = (el.dataset.prefix || '') + fmt.format(parseFloat(el.dataset.count)) + (el.dataset.suffix || '');
+                        return;
+                    }
+                    const target = parseFloat(el.dataset.count);
+                    const prefix = el.dataset.prefix || '';
+                    const suffix = el.dataset.suffix || '';
+                    const dur = 1200;
+                    const start = performance.now();
+                    function tick(now) {
+                        const p = Math.min((now - start) / dur, 1);
+                        const eased = 1 - Math.pow(1 - p, 4); // easeOutQuart — halus
+                        el.textContent = prefix + fmt.format(Math.round(target * eased)) + suffix;
+                        if (p < 1) requestAnimationFrame(tick);
+                    }
+                    requestAnimationFrame(tick);
+                };
+                const cio = new IntersectionObserver((entries) => {
+                    entries.forEach(en => {
+                        if (en.isIntersecting) { animate(en.target); cio.unobserve(en.target); }
+                    });
+                }, { threshold: 0.4 });
+                counters.forEach(el => cio.observe(el));
+            }
+
+            /* ---------- 4. Progress bar animasi ---------- */
+            const bars = document.querySelectorAll('.progress-jb .progress-bar[data-width]');
+            if (bars.length) {
+                const bio = new IntersectionObserver((entries) => {
+                    entries.forEach((en, i) => {
+                        if (!en.isIntersecting) return;
+                        const bar = en.target;
+                        setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 150 + i * 120);
+                        bio.unobserve(bar);
+                    });
+                }, { threshold: 0.3 });
+                bars.forEach(b => bio.observe(b));
+            }
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>
