@@ -16,7 +16,7 @@
                         <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-name="{{ $aset->nama_aset }}"><i class="fas fa-trash me-1"></i>Hapus</button>
                     </form>
                     @endif
-                    @if(!$aset->is_validated)
+                    @if(!$aset->is_validated && auth()->user()->role !== 'opd')
                     <form method="POST" action="{{ route('admin.aset.validate', $aset) }}" style="display:inline;">
                         @csrf @method('POST')
                         <button class="btn btn-sm btn-outline-success"><i class="fas fa-check"></i> Validasi</button>

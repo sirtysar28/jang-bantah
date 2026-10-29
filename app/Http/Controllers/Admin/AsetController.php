@@ -9,6 +9,7 @@ use App\Models\Aset;
 use App\Models\Desa;
 use App\Models\Kecamatan;
 use App\Models\Opd;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,11 @@ class AsetController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi']);
+
+        // OPD hanya melihat aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, $user);
 
         if ($request->filled('search')) {
             $query->where('nama_aset', 'like', '%' . $request->search . '%')
@@ -26,7 +31,8 @@ class AsetController extends Controller
         if ($request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $request->kecamatan_id);
         }
-        if ($request->filled('opd_id')) {
+        // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
+        if ($request->filled('opd_id') && !OpdAccess::limited($user)) {
             $query->where('opd_id', $request->opd_id);
         }
         if ($request->filled('status')) {
@@ -51,7 +57,10 @@ class AsetController extends Controller
     {
         $kecamatans = Kecamatan::orderBy('nama')->get();
         $desas = Desa::orderBy('nama')->get();
-        $opds = Opd::all();
+        // OPD hanya bisa memilih OPD-nya sendiri
+        $opds = OpdAccess::limited(Auth::user())
+            ? Opd::where('id', Auth::user()->opd_id)->get()
+            : Opd::all();
         return view('admin.aset.create', compact('kecamatans', 'desas', 'opds'));
     }
 
@@ -96,6 +105,9 @@ class AsetController extends Controller
         }
         $validated['created_by'] = Auth::id();
 
+        // OPD tidak bisa mendaftarkan aset atas nama OPD lain
+        $validated = OpdAccess::forceOpdId(Auth::user(), $validated);
+
         Aset::create($validated);
 
         // Notifikasi: pengajuan aset baru dari OPD masuk ke email admin
@@ -127,15 +139,22 @@ class AsetController extends Controller
 
     public function show(Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $aset->load(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananAdministrasi', 'pengamananFisik', 'pengamananHukum', 'dokumen', 'monitoring', 'pemanfaatan']);
         return view('admin.aset.show', compact('aset'));
     }
 
     public function edit(Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $kecamatans = Kecamatan::orderBy('nama')->get();
         $desas = Desa::orderBy('nama')->get();
-        $opds = Opd::all();
+        // OPD hanya bisa memilih OPD-nya sendiri
+        $opds = OpdAccess::limited(Auth::user())
+            ? Opd::where('id', Auth::user()->opd_id)->get()
+            : Opd::all();
         return view('admin.aset.edit', compact('aset', 'kecamatans', 'desas', 'opds'));
     }
 
@@ -182,6 +201,14 @@ class AsetController extends Controller
             $validated['foto_lokasi'] = $request->file('foto_lokasi')->store('aset/foto', 'public');
         }
         $validated['updated_by'] = Auth::id();
+
+        // OPD tidak bisa memindahkan asetnya ke OPD lain
+        $validated = OpdAccess::forceOpdId(Auth::user(), $validated);
+
+        // Hanya admin yang boleh mengubah status validasi aset
+        if (OpdAccess::limited(Auth::user())) {
+            unset($validated['is_validated']);
+        }
 
         $old = $aset->toArray();
         $aset->update($validated);

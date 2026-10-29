@@ -41,12 +41,22 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-500" style="font-size:.85rem;">OPD</label>
+                    @if(auth()->user()->role === 'opd')
+                    <select class="form-select" disabled>
+                        @foreach($opds as $o)
+                        <option value="{{ $o->id }}" selected>{{ $o->nama }}</option>
+                        @endforeach
+                    </select>
+                    <input type="hidden" name="opd_id" value="{{ auth()->user()->opd_id }}">
+                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-lock me-1"></i>Aset otomatis tercatat atas OPD Anda.</small>
+                    @else
                     <select name="opd_id" class="form-select">
                         <option value="">Pilih OPD</option>
                         @foreach($opds as $o)
                         <option value="{{ $o->id }}">{{ $o->nama }}</option>
                         @endforeach
                     </select>
+                    @endif
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-500" style="font-size:.85rem;">Luas (m²)</label>

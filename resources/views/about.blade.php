@@ -37,21 +37,21 @@
                     <div class="p-5 rounded-4" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));">
                         <i class="fas fa-university text-white" style="font-size:8rem;opacity:.2;"></i>
                         <div class="position-relative" style="margin-top:-120px;">
-                            <h2 class="text-white fw-800">JANG BANTAH</h2>
+                            <h2 class="text-white fw-800">{{ \App\WebsiteContent::get('web_about_box_title') }}</h2>
                             <p class="text-white" style="opacity:.9;font-size:.95rem;">
-                                Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat
+                                {{ \App\WebsiteContent::get('web_about_box_text') }}
                             </p>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <span class="badge bg-warning text-dark px-3 py-2 mb-3" style="font-size:.75rem;">PROFIL SISTEM</span>
-                    <h2 class="fw-700 mb-3">Tentang JANG BANTAH</h2>
+                    <span class="badge bg-warning text-dark px-3 py-2 mb-3" style="font-size:.75rem;">{{ \App\WebsiteContent::get('web_about_badge') }}</span>
+                    <h2 class="fw-700 mb-3">{{ \App\WebsiteContent::get('web_about_title') }}</h2>
                     <p style="color:#555;font-size:.95rem;">
-                        <strong>JANG BANTAH</strong> adalah Sistem Informasi Manajemen Bank Tanah Pemerintah Kabupaten Halmahera Barat yang dirancang sebagai pusat pengelolaan, pengamanan, sertifikasi, monitoring, dan pemanfaatan aset tanah daerah secara digital dan terintegrasi.
+                        {{ \App\WebsiteContent::get('web_about_p1') }}
                     </p>
                     <p style="color:#555;font-size:.95rem;">
-                        Sistem ini mendukung program MCSP KPK dan menjadi instrumen penting dalam peningkatan Pendapatan Asli Daerah (PAD) melalui optimalisasi pemanfaatan aset tanah.
+                        {{ \App\WebsiteContent::get('web_about_p2') }}
                     </p>
                 </div>
             </div>
@@ -59,20 +59,9 @@
             <!-- Tujuan -->
             <div class="card border-0 shadow-sm mb-5">
                 <div class="card-body p-4 p-lg-5">
-                    <h3 class="fw-700 mb-4 text-center">Tujuan Sistem</h3>
+                    <h3 class="fw-700 mb-4 text-center">{{ \App\WebsiteContent::get('web_about_tujuan_title') }}</h3>
                     <div class="row g-3">
-                        @php
-                            $tujuan = [
-                                'Digitalisasi seluruh aset tanah Pemda Halmahera Barat.',
-                                'Mempercepat proses sertifikasi tanah.',
-                                'Mencegah sengketa aset tanah daerah.',
-                                'Menjadi pusat data aset terintegrasi.',
-                                'Menampilkan dashboard kondisi aset secara realtime.',
-                                'Mendukung MCSP KPK.',
-                                'Mendukung peningkatan PAD dari pemanfaatan aset.',
-                            ];
-                        @endphp
-                        @foreach($tujuan as $t)
+                        @foreach (\App\WebsiteContent::lines('web_about_tujuan') as $t)
                         <div class="col-lg-6">
                             <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f8fafc;">
                                 <i class="fas fa-check-circle text-success mt-1"></i>
@@ -92,7 +81,7 @@
                             <i class="fas fa-eye mb-3" style="font-size:2.5rem;color:var(--primary);"></i>
                             <h4 class="fw-700 mb-3">Visi</h4>
                             <p style="color:#555;font-size:.95rem;">
-                                Mewujudkan pengelolaan aset tanah Pemerintah Kabupaten Halmahera Barat yang transparan, akuntabel, dan berbasis teknologi digital untuk mendukung tata kelola pemerintahan yang baik.
+                                {{ \App\WebsiteContent::get('web_about_visi') }}
                             </p>
                         </div>
                     </div>
@@ -103,10 +92,9 @@
                             <i class="fas fa-bullseye mb-3" style="font-size:2.5rem;color:var(--gold);"></i>
                             <h4 class="fw-700 mb-3">Misi</h4>
                             <ul class="list-unstyled text-start" style="color:#555;font-size:.9rem;">
-                                <li class="mb-2"><i class="fas fa-arrow-right me-2 text-primary"></i>Mendigitalisasi seluruh data aset tanah daerah.</li>
-                                <li class="mb-2"><i class="fas fa-arrow-right me-2 text-primary"></i>Mempercepat sertifikasi tanah melalui monitoring BPN.</li>
-                                <li class="mb-2"><i class="fas fa-arrow-right me-2 text-primary"></i>Mengamankan aset tanah secara administrasi, fisik, dan hukum.</li>
-                                <li class="mb-2"><i class="fas fa-arrow-right me-2 text-primary"></i>Mengoptimalkan pemanfaatan aset untuk peningkatan PAD.</li>
+                                @foreach (\App\WebsiteContent::lines('web_about_misi') as $m)
+                                <li class="mb-2"><i class="fas fa-arrow-right me-2 text-primary"></i>{{ $m }}</li>
+                                @endforeach
                             </ul>
                         </div>
                     </div>

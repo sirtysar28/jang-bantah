@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\PengamananHukum;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +13,12 @@ class PengamananHukumController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'opd', 'pengamananHukum.checker']);
+
+        // OPD hanya melihat aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, $user);
 
         if ($request->filled('filter') && $request->filter === 'belum') {
             $query->whereDoesntHave('pengamananHukum');
@@ -29,17 +35,23 @@ class PengamananHukumController extends Controller
 
         $asets = $query->latest()->paginate(10);
 
-        $totalAset = Aset::count();
-        $sudahDiisi = PengamananHukum::count();
+        // Ringkasan (terbatas ke OPD sendiri jika login OPD)
+        $baseAset = OpdAccess::scopeAset(Aset::query(), $user);
+        $basePengamanan = OpdAccess::scopeAsetRelation(PengamananHukum::query(), $user);
+
+        $totalAset = (clone $baseAset)->count();
+        $sudahDiisi = (clone $basePengamanan)->count();
         $belumDiisi = $totalAset - $sudahDiisi;
-        $aman = PengamananHukum::where('status_sengketa', 'tidak_sengketa')->count();
-        $bermasalah = PengamananHukum::where('status_sengketa', '!=', 'tidak_sengketa')->count();
+        $aman = (clone $basePengamanan)->where('status_sengketa', 'tidak_sengketa')->count();
+        $bermasalah = (clone $basePengamanan)->where('status_sengketa', '!=', 'tidak_sengketa')->count();
 
         return view('admin.pengamanan.hukum', compact('asets', 'totalAset', 'sudahDiisi', 'belumDiisi', 'aman', 'bermasalah'));
     }
 
     public function updateOrCreate(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'status_sengketa' => 'required|in:tidak_sengketa,sengketa,perkara,gugatan',
             'nomor_perkara' => 'nullable|string|max:100',

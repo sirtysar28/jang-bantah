@@ -8,6 +8,7 @@ use App\Models\MonitoringAset;
 use App\Models\Notifikasi;
 use App\Models\Opd;
 use App\Models\Sertifikasi;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,22 +18,34 @@ class DashboardController
     {
         $user = Auth::user();
 
+        // Basis query aset. Jika login sebagai OPD, hanya aset milik OPD-nya sendiri.
+        $baseAset = OpdAccess::scopeAset(Aset::query(), $user);
+
         // Semua statistik membaca master data tanah (asets) yang AKTIF saja.
         // Aset yang dihapus (soft-delete) tidak dihitung lagi.
-        $totalAset = Aset::count();
-        $totalNilai = Aset::sum('nilai_aset');
-        $sudahSertifikat = Aset::whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count();
+        $totalAset = (clone $baseAset)->count();
+        $totalNilai = (clone $baseAset)->sum('nilai_aset');
+        $sudahSertifikat = (clone $baseAset)->whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count();
         $belumSertifikat = $totalAset - $sudahSertifikat;
-        $sengketa = Aset::where('status', 'sengketa')->count();
-        $prosesBPN = Aset::whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['diajukan_bpn', 'proses_ukur', 'proses_validasi']))->count();
+        $sengketa = (clone $baseAset)->where('status', 'sengketa')->count();
+        $prosesBPN = (clone $baseAset)->whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['diajukan_bpn', 'proses_ukur', 'proses_validasi']))->count();
 
         // Grafik: sebaran kecamatan & OPD (hanya aset aktif)
-        $sebaranKecamatan = Kecamatan::withCount('asets')->get();
-        $sebaranOpd = Opd::withCount('asets')->take(10)->get();
+        // Untuk OPD, sebaran dihitung dari aset milik OPD-nya sendiri
+        $sebaranKecamatan = Kecamatan::withCount([
+            'asets' => fn($q) => OpdAccess::limited($user) ? $q->where('opd_id', $user->opd_id) : $q,
+        ])->get();
+        $sebaranOpd = OpdAccess::limited($user)
+            ? Opd::where('id', $user->opd_id)->withCount('asets')->get()
+            : Opd::withCount('asets')->take(10)->get();
 
         // Grafik status sertifikasi — hanya sertifikasi milik aset yang masih ada
-        $sertifikasiAktif = fn($status) => Sertifikasi::where('status', $status)->whereHas('aset');
-        $belumAdaSertifikasi = Aset::whereDoesntHave('sertifikasi')->count();
+        // (dan milik OPD sendiri jika login sebagai OPD)
+        $sertifikasiAktif = fn($status) => OpdAccess::scopeAsetRelation(
+            Sertifikasi::where('status', $status)->whereHas('aset'),
+            $user
+        );
+        $belumAdaSertifikasi = (clone $baseAset)->whereDoesntHave('sertifikasi')->count();
         $sertifikasiStatus = [
             'Belum Ada Record' => $belumAdaSertifikasi,
             'Belum Diajukan'   => $sertifikasiAktif('belum_diajukan')->count(),
@@ -45,7 +58,11 @@ class DashboardController
         ];
 
         // Monitoring progress — hanya monitoring milik aset yang masih ada
-        $monitoringAsetAktif = fn($jenis) => MonitoringAset::where('jenis', $jenis)->whereHas('aset')->avg('progress') ?? 0;
+        // (dan milik OPD sendiri jika login sebagai OPD)
+        $monitoringAsetAktif = fn($jenis) => OpdAccess::scopeAsetRelation(
+            MonitoringAset::where('jenis', $jenis)->whereHas('aset'),
+            $user
+        )->avg('progress') ?? 0;
         $monitoringData = [
             'validasi' => $monitoringAsetAktif('validasi'),
             'sertifikasi' => $monitoringAsetAktif('sertifikasi'),
@@ -58,7 +75,7 @@ class DashboardController
         $unreadCount = Notifikasi::where('user_id', $user->id)->unread()->count();
 
         // Riwayat penambahan aset per tahun (hanya aset aktif, termasuk tahun dengan 0 aset)
-        $tahunMin = Aset::min('tahun_perolehan') ?? (int) date('Y') - 5;
+        $tahunMin = (clone $baseAset)->min('tahun_perolehan') ?? (int) date('Y') - 5;
         $tahunMax = (int) date('Y');
         $tahunRange = range($tahunMin, $tahunMax);
 
@@ -66,7 +83,7 @@ class DashboardController
         $riwayatAsetData = [];
         foreach ($tahunRange as $tahun) {
             $riwayatAsetLabels[] = (string) $tahun;
-            $riwayatAsetData[] = Aset::where('tahun_perolehan', $tahun)->count();
+            $riwayatAsetData[] = (clone $baseAset)->where('tahun_perolehan', $tahun)->count();
         }
 
         return view('admin.dashboard', compact(

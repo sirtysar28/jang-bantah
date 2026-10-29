@@ -29,18 +29,24 @@
         </div>
     </nav>
 
-    <!-- ══════════════════ HERO VIDEO BACKGROUND ══════════════════ -->
+    <!-- ══════════════════ HERO BACKGROUND (VIDEO / GAMBAR) ══════════════════ -->
     <section id="heroVideo" class="hero-video">
-        <!-- Video Background dari YouTube -->
+        <!-- Background dikelola Super Admin: menu Kelola Website (video YouTube atau gambar) -->
         <div class="video-bg">
+            @if (\App\WebsiteContent::heroType() === 'image' && \App\WebsiteContent::heroImageUrl())
+            <img src="{{ \App\WebsiteContent::heroImageUrl() }}"
+                 alt="{{ \App\WebsiteContent::get('web_hero_title') }}"
+                 class="hero-image-bg">
+            @else
             <div class="video-bg-wrapper">
                 <iframe
-                    src="https://www.youtube.com/embed/FwCIWtT9TiM?autoplay=1&mute=1&loop=1&playlist=FwCIWtT9TiM&controls=0&showinfo=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&cc_load_policy=0"
-                    title="JANG BANTAH - Halmahera Barat"
+                    src="{{ \App\WebsiteContent::youtubeEmbedUrl() }}"
+                    title="{{ \App\WebsiteContent::get('web_hero_title') }}"
                     frameborder="0"
                     allow="autoplay; encrypted-media; picture-in-picture"
                     allowfullscreen></iframe>
             </div>
+            @endif
         </div>
         <div class="slider-overlay"></div>
 
@@ -49,23 +55,23 @@
             <div class="row align-items-center hero-row">
                 <div class="col-lg-12 text-white animate-fade-up">
                     <span class="badge mb-3 px-3 py-2" style="font-size:.75rem; background:rgba(255,255,255,.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.25); color:#fff;">
-                        <i class="fas fa-landmark me-1"></i> PEMERINTAH KABUPATEN HALMAHERA BARAT
+                        <i class="fas fa-landmark me-1"></i> {{ \App\WebsiteContent::get('web_hero_badge') }}
                     </span>
                     <h1 class="fw-800 mb-3 display-4" style="text-shadow: 2px 4px 20px rgba(0,20,60,.5);">
-                        JANG BANTAH
+                        {{ \App\WebsiteContent::get('web_hero_title') }}
                     </h1>
                     <p class="lead mb-2 fw-500" style="opacity:.95; text-shadow: 1px 2px 10px rgba(0,0,0,.4);">
-                        Jaringan Bank Tanah — Pemkab. Halmahera Barat
+                        {{ \App\WebsiteContent::get('web_hero_subtitle') }}
                     </p>
                     <p style="opacity:.85; max-width:550px; font-size:.95rem; text-shadow: 1px 2px 10px rgba(0,0,0,.4); line-height:1.7;">
-                        Sistem Informasi Manajemen Bank Tanah Digital Terintegrasi untuk pengelolaan, pengamanan, dan sertifikasi aset tanah pemerintah daerah.
+                        {{ \App\WebsiteContent::get('web_hero_description') }}
                     </p>
                     <div class="d-flex gap-3 mt-4 flex-wrap">
                         <a href="{{ route('about') }}" class="btn btn-gold">
-                            <i class="fas fa-info-circle me-2"></i>Pelajari Lebih Lanjut
+                            <i class="fas fa-info-circle me-2"></i>{{ \App\WebsiteContent::get('web_hero_btn1_text') }}
                         </a>
                         <a href="{{ route('map.public') }}" class="btn btn-outline-light" style="border-radius:50px; padding:12px 28px;">
-                            <i class="fas fa-map me-2"></i>Lihat Peta Aset
+                            <i class="fas fa-map me-2"></i>{{ \App\WebsiteContent::get('web_hero_btn2_text') }}
                         </a>
                     </div>
                 </div>
@@ -112,37 +118,37 @@
     <!-- ══════════════════ FITUR SECTION ══════════════════ -->
     <section class="py-5">
         <div class="container">
-            <h2 class="text-center section-title mb-2">Fitur Unggulan Sistem</h2>
+            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_fitur_title') }}</h2>
             <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                Platform digital terintegrasi untuk pengelolaan aset tanah pemerintah daerah yang modern dan efisien.
+                {{ \App\WebsiteContent::get('web_fitur_desc') }}
             </p>
             <div class="row g-4">
                 <div class="col-lg-3 col-md-6">
                     <div class="feature-card">
                         <div class="icon-box"><i class="fas fa-database"></i></div>
-                        <h6 class="fw-600 mb-2">Digitalisasi Aset</h6>
-                        <p style="font-size:.85rem;color:#666;">Pendataan seluruh aset tanah secara digital dan terintegrasi.</p>
+                        <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur1_title') }}</h6>
+                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur1_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="feature-card">
                         <div class="icon-box" style="background:linear-gradient(135deg,#27AE60,#2ECC71);"><i class="fas fa-certificate"></i></div>
-                        <h6 class="fw-600 mb-2">Sertifikasi</h6>
-                        <p style="font-size:.85rem;color:#666;">Monitoring proses sertifikasi tanah hingga terbit sertifikat.</p>
+                        <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur2_title') }}</h6>
+                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur2_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="feature-card">
                         <div class="icon-box" style="background:linear-gradient(135deg,#004d99,#1a75d1);"><i class="fas fa-shield-halved"></i></div>
-                        <h6 class="fw-600 mb-2">Pengamanan Aset</h6>
-                        <p style="font-size:.85rem;color:#666;">Pengamanan administrasi, fisik, dan hukum aset tanah.</p>
+                        <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur3_title') }}</h6>
+                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur3_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="feature-card">
                         <div class="icon-box" style="background:linear-gradient(135deg,#f0c040,#d4a020);"><i class="fas fa-globe"></i></div>
-                        <h6 class="fw-600 mb-2">GIS / Peta Digital</h6>
-                        <p style="font-size:.85rem;color:#666;">Visualisasi sebaran aset tanah pada peta digital interaktif.</p>
+                        <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur4_title') }}</h6>
+                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur4_desc') }}</p>
                     </div>
                 </div>
             </div>
@@ -153,9 +159,9 @@
     @if($asets->count() > 0)
     <section class="py-5" style="background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%);">
         <div class="container">
-            <h2 class="text-center section-title mb-2">Data Aset Terbaru</h2>
+            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_aset_title') }}</h2>
             <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                Informasi terkini mengenai aset tanah yang telah terdata dalam sistem.
+                {{ \App\WebsiteContent::get('web_aset_desc') }}
             </p>
             <div class="row g-4">
                 @foreach($asets as $aset)
@@ -196,18 +202,14 @@
     <!-- ══════════════════ WORKFLOW SECTION ══════════════════ -->
     <section class="py-5">
         <div class="container">
-            <h2 class="text-center section-title mb-2">Alur Kerja Sistem</h2>
+            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_alur_title') }}</h2>
             <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                Proses end-to-end pengelolaan bank tanah dari pendataan hingga pemanfaatan.
+                {{ \App\WebsiteContent::get('web_alur_desc') }}
             </p>
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <div class="d-flex flex-wrap justify-content-center gap-2 align-items-center">
-                        @php
-                            $steps = ['Pendataan Aset', 'Validasi Data', 'Upload Dokumen', 'Verifikasi', 'Input GIS',
-                                      'Pengamanan Administrasi', 'Pengamanan Fisik', 'Pengamanan Hukum',
-                                      'Pengajuan Sertifikasi', 'Monitoring BPN', 'Terbit Sertifikat', 'Pemanfaatan Aset'];
-                        @endphp
+                        @php $steps = \App\WebsiteContent::lines('web_alur_steps'); @endphp
                         @foreach($steps as $i => $step)
                         <div class="text-center" style="min-width:100px;">
                             <div class="d-flex align-items-center justify-content-center mx-auto mb-2 workflow-step">
@@ -238,17 +240,16 @@
                         </div>
                     </div>
                     <p style="font-size:.85rem; line-height:1.7;">
-                        Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat.<br>
-                        Sistem Informasi Manajemen Bank Tanah Digital Terintegrasi.
+                        {{ nl2br(e(\App\WebsiteContent::get('web_footer_desc'))) }}
                     </p>
                     <div class="d-flex gap-3 mt-3">
-                        <a href="#" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
+                        <a href="{{ \App\WebsiteContent::get('web_social_facebook') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
                             <i class="fab fa-facebook-f"></i>
                         </a>
-                        <a href="#" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
+                        <a href="{{ \App\WebsiteContent::get('web_social_instagram') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="#" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
+                        <a href="{{ \App\WebsiteContent::get('web_social_youtube') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
                             <i class="fab fa-youtube"></i>
                         </a>
                     </div>
@@ -256,23 +257,23 @@
                 <div class="col-lg-4 mb-4">
                     <h5><i class="fas fa-link me-2"></i>Link Terkait</h5>
                     <ul class="list-unstyled" style="font-size:.85rem; line-height:2.2;">
-                        <li><a href="https://halbarkab.go.id/" class="text-white text-decoration-none" target="_blank" rel="noopener"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>Website Pemkab. Halbar</a></li>
-                        <li><a href="#" class="text-white text-decoration-none"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>BKAD</a></li>
-                        <li><a href="#" class="text-white text-decoration-none"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>Diskominfo</a></li>
+                        <li><a href="{{ \App\WebsiteContent::get('web_footer_link1_url') }}" class="text-white text-decoration-none" target="_blank" rel="noopener"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>{{ \App\WebsiteContent::get('web_footer_link1_name') }}</a></li>
+                        <li><a href="{{ \App\WebsiteContent::get('web_footer_link2_url') }}" class="text-white text-decoration-none"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>{{ \App\WebsiteContent::get('web_footer_link2_name') }}</a></li>
+                        <li><a href="{{ \App\WebsiteContent::get('web_footer_link3_url') }}" class="text-white text-decoration-none"><i class="fas fa-external-link-alt me-2" style="font-size:.7rem;"></i>{{ \App\WebsiteContent::get('web_footer_link3_name') }}</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <h5><i class="fas fa-headset me-2"></i>Kontak</h5>
                     <div style="font-size:.85rem; line-height:1.9;">
-                        <p class="mb-1 fw-600 text-white">Pemerintah Daerah Kabupaten Halmahera Barat</p>
-                        <p class="mb-0"><i class="fas fa-map-marker-alt me-2" style="color:var(--blue-400);"></i>Jl. Pengabdian No. 1 Desa Jati<br>Kec. Jailolo Kab. Halmahera Barat<br>Provinsi Maluku Utara</p>
-                        <p class="mb-0 mt-2"><i class="fas fa-globe me-2" style="color:var(--blue-400);"></i><a href="https://halbarkab.go.id/" class="text-white text-decoration-none" target="_blank" rel="noopener">halbarkab.go.id</a></p>
+                        <p class="mb-1 fw-600 text-white">{{ \App\WebsiteContent::get('web_footer_instansi') }}</p>
+                        <p class="mb-0"><i class="fas fa-map-marker-alt me-2" style="color:var(--blue-400);"></i>{{ nl2br(e(\App\WebsiteContent::get('web_footer_address'))) }}</p>
+                        <p class="mb-0 mt-2"><i class="fas fa-globe me-2" style="color:var(--blue-400);"></i><a href="{{ \App\WebsiteContent::get('web_footer_website') }}" class="text-white text-decoration-none" target="_blank" rel="noopener">{{ \App\WebsiteContent::get('web_footer_website') }}</a></p>
                     </div>
                 </div>
             </div>
             <hr style="border-color:rgba(255,255,255,.1);">
             <div class="text-center" style="font-size:.8rem;">
-                &copy; {{ date('Y') }} Pemerintah Kabupaten Halmahera Barat &mdash; JANG BANTAH — Jaringan Bank Tanah
+                &copy; {{ date('Y') }} {{ \App\WebsiteContent::get('web_footer_copyright') }}
             </div>
         </div>
     </footer>
@@ -310,6 +311,15 @@
         height: 100%;
         border: 0;
         pointer-events: none;
+    }
+    /* Background gambar statis (mode "Gambar" dari Kelola Website) */
+    .hero-image-bg {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
     }
     .slider-overlay {
         position: absolute;

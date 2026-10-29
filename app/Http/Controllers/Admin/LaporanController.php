@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\Kecamatan;
 use App\Models\Opd;
+use App\OpdAccess;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AsetExport;
 
@@ -15,24 +17,33 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $kecamatans = Kecamatan::orderBy('nama')->get();
-        $opds = Opd::orderBy('nama')->get();
+        // OPD hanya melihat laporan aset OPD-nya sendiri
+        $opds = OpdAccess::limited($user)
+            ? Opd::where('id', $user->opd_id)->orderBy('nama')->get()
+            : Opd::orderBy('nama')->get();
 
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
-        $this->applyFilters($request, $query);
+        OpdAccess::scopeAset($query, $user);
+        $this->applyFilters($request, $query, $user);
 
         $asets = $query->get();
 
+        // Basis query ringkasan (terbatas ke OPD sendiri jika login OPD)
+        $ringkasanAset = OpdAccess::scopeAset(Aset::query(), $user);
+
         // Ringkasan sesuai filter
         $ringkasan = [
-            'total'        => Aset::count(),
-            'nilai'        => Aset::sum('nilai_aset'),
-            'luas'         => Aset::sum('luas'),
-            'sertifikat'   => Aset::whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count(),
-            'belum_sertifikat' => Aset::whereDoesntHave('sertifikasi')->count(),
-            'proses_sertifikasi' => Aset::whereHas('sertifikasi', fn($q) => $q->whereNotIn('status', ['terbit_sertifikat', 'selesai']))->count(),
-            'sengketa'     => Aset::whereHas('pengamananHukum', fn($q) => $q->where('status_sengketa', '!=', 'tidak_sengketa'))->count(),
-            'aktif'        => Aset::where('status', 'aktif')->count(),
+            'total'        => (clone $ringkasanAset)->count(),
+            'nilai'        => (clone $ringkasanAset)->sum('nilai_aset'),
+            'luas'         => (clone $ringkasanAset)->sum('luas'),
+            'sertifikat'   => (clone $ringkasanAset)->whereHas('sertifikasi', fn($q) => $q->whereIn('status', ['terbit_sertifikat', 'selesai']))->count(),
+            'belum_sertifikat' => (clone $ringkasanAset)->whereDoesntHave('sertifikasi')->count(),
+            'proses_sertifikasi' => (clone $ringkasanAset)->whereHas('sertifikasi', fn($q) => $q->whereNotIn('status', ['terbit_sertifikat', 'selesai']))->count(),
+            'sengketa'     => (clone $ringkasanAset)->whereHas('pengamananHukum', fn($q) => $q->where('status_sengketa', '!=', 'tidak_sengketa'))->count(),
+            'aktif'        => (clone $ringkasanAset)->where('status', 'aktif')->count(),
         ];
 
         // Ringkasan sesuai filter aktif
@@ -47,8 +58,11 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
-        $this->applyFilters($request, $query);
+        OpdAccess::scopeAset($query, $user);
+        $this->applyFilters($request, $query, $user);
         $asets = $query->get();
 
         $filterInfo = [];
@@ -77,12 +91,13 @@ class LaporanController extends Controller
         return Excel::download(new AsetExport($request), 'laporan-aset.xlsx');
     }
 
-    private function applyFilters(Request $request, $query)
+    private function applyFilters(Request $request, $query, ?\App\Models\User $user = null)
     {
         if ($request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $request->kecamatan_id);
         }
-        if ($request->filled('opd_id')) {
+        // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
+        if ($request->filled('opd_id') && !OpdAccess::limited($user)) {
             $query->where('opd_id', $request->opd_id);
         }
         if ($request->filled('status')) {

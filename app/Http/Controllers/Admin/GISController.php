@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\Kecamatan;
 use App\Models\Opd;
+use App\OpdAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GISController extends Controller
 {
@@ -19,14 +21,20 @@ class GISController extends Controller
 
     public function getGeoJson(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
+        // OPD hanya melihat titik aset milik OPD-nya sendiri di peta
+        OpdAccess::scopeAset($query, $user);
+
         if ($request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $request->kecamatan_id);
         }
-        if ($request->filled('opd_id')) {
+        // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
+        if ($request->filled('opd_id') && !OpdAccess::limited($user)) {
             $query->where('opd_id', $request->opd_id);
         }
         if ($request->filled('status_sertifikat')) {

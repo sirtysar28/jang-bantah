@@ -3,13 +3,15 @@
 namespace App\Exports;
 
 use App\Models\Aset;
+use App\OpdAccess;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
-use Illuminate\Http\Request;
 
 class AsetExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithEvents
 {
@@ -29,10 +31,14 @@ class AsetExport implements FromCollection, WithHeadings, WithMapping, WithTitle
     {
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
 
+        // OPD hanya mengekspor aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, Auth::user());
+
         if ($this->request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $this->request->kecamatan_id);
         }
-        if ($this->request->filled('opd_id')) {
+        // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
+        if ($this->request->filled('opd_id') && !OpdAccess::limited(Auth::user())) {
             $query->where('opd_id', $this->request->opd_id);
         }
         if ($this->request->filled('status')) {

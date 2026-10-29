@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\DokumenAset;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,12 +14,16 @@ class DokumenController extends Controller
 {
     public function index(Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $dokumens = $aset->dokumen()->latest()->paginate(10);
         return view('admin.dokumen.index', compact('aset', 'dokumens'));
     }
 
     public function store(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'jenis_dokumen' => 'required|string|in:sertifikat,ajb,imb_pbg,hibah,pelepasan_hak,sk,berita_acara,peta_bidang,shp,dwg,lainnya',
             'nomor_dokumen' => 'nullable|string|max:100',
@@ -45,11 +50,19 @@ class DokumenController extends Controller
 
     public function download(DokumenAset $dokumen)
     {
+        if ($dokumen->aset) {
+            OpdAccess::authorize(Auth::user(), $dokumen->aset);
+        }
+
         return Storage::disk('public')->download($dokumen->file_path, $dokumen->file_name);
     }
 
     public function destroy(DokumenAset $dokumen)
     {
+        if ($dokumen->aset) {
+            OpdAccess::authorize(Auth::user(), $dokumen->aset);
+        }
+
         Storage::disk('public')->delete($dokumen->file_path);
         $dokumen->delete();
         return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');

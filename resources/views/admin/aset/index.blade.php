@@ -4,7 +4,11 @@
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="fas fa-map-marked-alt me-2"></i>Data Tanah / Aset</span>
+        <span><i class="fas fa-map-marked-alt me-2"></i>Data Tanah / Aset
+            @if(auth()->user()->role === 'opd')
+            <span class="badge bg-info ms-2" title="Data terbatas pada OPD Anda">{{ auth()->user()->opd?->singkatan ?? auth()->user()->opd?->nama ?? 'OPD Saya' }}</span>
+            @endif
+        </span>
         <div class="d-flex gap-2">
             <a href="{{ route('admin.aset.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah Aset</a>
         </div>
@@ -24,12 +28,18 @@
                 </select>
             </div>
             <div class="col-md-2">
+                @if(auth()->user()->role === 'opd')
+                <select class="form-select form-select-sm" disabled title="Anda hanya melihat aset {{ auth()->user()->opd?->nama ?? 'OPD Anda' }}">
+                    <option selected>{{ auth()->user()->opd?->nama ?? 'OPD Saya' }}</option>
+                </select>
+                @else
                 <select name="opd_id" class="form-select form-select-sm">
                     <option value="">Semua OPD</option>
                     @foreach($opds as $o)
                     <option value="{{ $o->id }}" {{ request('opd_id') == $o->id ? 'selected' : '' }}>{{ $o->nama }}</option>
                     @endforeach
                 </select>
+                @endif
             </div>
             <div class="col-md-2">
                 <select name="status" class="form-select form-select-sm">

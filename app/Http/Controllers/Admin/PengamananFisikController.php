@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\PengamananFisik;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,12 @@ class PengamananFisikController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'opd', 'pengamananFisik.checker']);
+
+        // OPD hanya melihat aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, $user);
 
         if ($request->filled('filter') && $request->filter === 'belum') {
             $query->whereDoesntHave('pengamananFisik');
@@ -32,17 +38,23 @@ class PengamananFisikController extends Controller
 
         $asets = $query->latest()->paginate(10);
 
-        $totalAset = Aset::count();
-        $sudahDiisi = PengamananFisik::count();
+        // Ringkasan (terbatas ke OPD sendiri jika login OPD)
+        $baseAset = OpdAccess::scopeAset(Aset::query(), $user);
+        $basePengamanan = OpdAccess::scopeAsetRelation(PengamananFisik::query(), $user);
+
+        $totalAset = (clone $baseAset)->count();
+        $sudahDiisi = (clone $basePengamanan)->count();
         $belumDiisi = $totalAset - $sudahDiisi;
-        $kondisiBaik = PengamananFisik::where('kondisi', 'baik')->count();
-        $kondisiRusak = PengamananFisik::whereIn('kondisi', ['rusak_ringan', 'rusak_berat'])->count();
+        $kondisiBaik = (clone $basePengamanan)->where('kondisi', 'baik')->count();
+        $kondisiRusak = (clone $basePengamanan)->whereIn('kondisi', ['rusak_ringan', 'rusak_berat'])->count();
 
         return view('admin.pengamanan.fisik', compact('asets', 'totalAset', 'sudahDiisi', 'belumDiisi', 'kondisiBaik', 'kondisiRusak'));
     }
 
     public function updateOrCreate(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'patok' => 'required|in:ada,tidak_ada,rusak',
             'pagar' => 'required|in:ada,tidak_ada,rusak',

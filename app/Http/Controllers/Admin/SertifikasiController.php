@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\Sertifikasi;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,8 +13,13 @@ class SertifikasiController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         // Hanya tampilkan sertifikasi yang aset induknya masih ada (belum dihapus)
         $query = Sertifikasi::with(['aset.kecamatan', 'aset.opd'])->whereHas('aset');
+
+        // OPD hanya melihat sertifikasi aset milik OPD-nya sendiri
+        OpdAccess::scopeAsetRelation($query, $user);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -25,6 +31,10 @@ class SertifikasiController extends Controller
 
     public function update(Request $request, Sertifikasi $sertifikasi)
     {
+        if ($sertifikasi->aset) {
+            OpdAccess::authorize(Auth::user(), $sertifikasi->aset);
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:belum_diajukan,persiapan_berkas,diajukan_bpn,proses_ukur,proses_validasi,terbit_sertifikat,selesai',
             'nomor_sertifikat' => 'nullable|string|max:100',
@@ -59,11 +69,15 @@ class SertifikasiController extends Controller
 
     public function create(Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         return view('admin.sertifikasi.create', compact('aset'));
     }
 
     public function store(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'status' => 'required|in:belum_diajukan,persiapan_berkas,diajukan_bpn,proses_ukur,proses_validasi,terbit_sertifikat,selesai',
             'nomor_sertifikat' => 'nullable|string|max:100',

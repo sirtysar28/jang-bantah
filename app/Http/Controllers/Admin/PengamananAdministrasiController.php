@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\PengamananAdministrasi;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +13,12 @@ class PengamananAdministrasiController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'opd', 'pengamananAdministrasi.checker']);
+
+        // OPD hanya melihat aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, $user);
 
         // Filter: aset yang sudah punya data pengamanan admin
         if ($request->filled('filter') && $request->filter === 'belum') {
@@ -37,10 +43,14 @@ class PengamananAdministrasiController extends Controller
 
         $asets = $query->latest()->paginate(10);
 
-        $totalAset = Aset::count();
-        $sudahDiisi = PengamananAdministrasi::count();
+        // Ringkasan (terbatas ke OPD sendiri jika login OPD)
+        $baseAset = OpdAccess::scopeAset(Aset::query(), $user);
+        $basePengamanan = OpdAccess::scopeAsetRelation(PengamananAdministrasi::query(), $user);
+
+        $totalAset = (clone $baseAset)->count();
+        $sudahDiisi = (clone $basePengamanan)->count();
         $belumDiisi = $totalAset - $sudahDiisi;
-        $lengkap = PengamananAdministrasi::where('dokumen_pendukung', 'lengkap')
+        $lengkap = (clone $basePengamanan)->where('dokumen_pendukung', 'lengkap')
             ->where('sertifikat', 'ada')->where('ajb', 'ada')->count();
 
         return view('admin.pengamanan.administrasi', compact('asets', 'totalAset', 'sudahDiisi', 'belumDiisi', 'lengkap'));
@@ -48,6 +58,8 @@ class PengamananAdministrasiController extends Controller
 
     public function updateOrCreate(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'sertifikat' => 'required|in:ada,tidak_ada',
             'imb_pbg' => 'required|in:ada,tidak_ada',

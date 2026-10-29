@@ -12,11 +12,15 @@
                 <option value="{{ $k->id }}">{{ $k->nama }}</option>
                 @endforeach
             </select>
-            <select id="filterOpd" class="form-select form-select-sm" style="width:auto;">
+            <select id="filterOpd" class="form-select form-select-sm" style="width:auto;" @if(auth()->user()->role === 'opd') disabled title="Peta terbatas pada OPD Anda" @endif>
+                @if(auth()->user()->role === 'opd')
+                <option value="{{ auth()->user()->opd_id }}" selected>{{ auth()->user()->opd?->singkatan ?? auth()->user()->opd?->nama ?? 'OPD Saya' }}</option>
+                @else
                 <option value="">Semua OPD</option>
                 @foreach($opds as $o)
                 <option value="{{ $o->id }}">{{ $o->singkatan ?? $o->nama }}</option>
                 @endforeach
+                @endif
             </select>
             <select id="filterSertifikat" class="form-select form-select-sm" style="width:auto;">
                 <option value="">Semua Status</option>

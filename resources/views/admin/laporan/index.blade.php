@@ -19,12 +19,18 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">OPD</label>
+                    @if(auth()->user()->role === 'opd')
+                    <select class="form-select form-select-sm" disabled title="Laporan terbatas pada OPD Anda">
+                        <option selected>{{ auth()->user()->opd?->singkatan ?? auth()->user()->opd?->nama ?? 'OPD Saya' }}</option>
+                    </select>
+                    @else
                     <select name="opd_id" class="form-select form-select-sm">
                         <option value="">Semua</option>
                         @foreach($opds as $o)
                         <option value="{{ $o->id }}" {{ request('opd_id') == $o->id ? 'selected' : '' }}>{{ $o->singkatan ?? $o->nama }}</option>
                         @endforeach
                     </select>
+                    @endif
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Status</label>

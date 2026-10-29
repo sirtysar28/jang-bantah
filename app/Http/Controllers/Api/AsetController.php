@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\DokumenAset;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,12 +14,19 @@ class AsetController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi']);
+
+        // OPD hanya melihat aset milik OPD-nya sendiri
+        OpdAccess::scopeAset($query, $user);
+
         if ($request->filled('search')) {
             $query->where('nama_aset', 'like', '%' . $request->search . '%');
         }
         if ($request->filled('kecamatan_id')) $query->where('kecamatan_id', $request->kecamatan_id);
-        if ($request->filled('opd_id')) $query->where('opd_id', $request->opd_id);
+        // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
+        if ($request->filled('opd_id') && !OpdAccess::limited($user)) $query->where('opd_id', $request->opd_id);
 
         return response()->json(['success' => true, 'data' => $query->paginate(20)]);
     }
@@ -42,6 +50,10 @@ class AsetController extends Controller
             'keterangan' => 'nullable|string',
         ]);
         $validated['created_by'] = Auth::id();
+
+        // OPD tidak bisa mendaftarkan aset atas nama OPD lain
+        $validated = OpdAccess::forceOpdId(Auth::user(), $validated);
+
         $aset = Aset::create($validated);
         return response()->json(['success' => true, 'data' => $aset], 201);
     }
@@ -49,12 +61,18 @@ class AsetController extends Controller
     public function show($id)
     {
         $aset = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananAdministrasi', 'pengamananFisik', 'pengamananHukum', 'dokumen'])->findOrFail($id);
+
+        OpdAccess::authorize(Auth::user(), $aset);
+
         return response()->json(['success' => true, 'data' => $aset]);
     }
 
     public function update(Request $request, $id)
     {
         $aset = Aset::findOrFail($id);
+
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'nama_aset' => 'string',
             'luas' => 'nullable|numeric',
@@ -70,12 +88,20 @@ class AsetController extends Controller
 
     public function destroy($id)
     {
-        Aset::findOrFail($id)->delete();
+        $aset = Aset::findOrFail($id);
+
+        OpdAccess::authorize(Auth::user(), $aset);
+
+        $aset->delete();
         return response()->json(['success' => true, 'message' => 'Aset berhasil dihapus.']);
     }
 
     public function dokumen($id)
     {
+        $aset = Aset::findOrFail($id);
+
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $dokumen = DokumenAset::where('aset_id', $id)->get();
         return response()->json(['success' => true, 'data' => $dokumen]);
     }
@@ -87,6 +113,11 @@ class AsetController extends Controller
             'jenis_dokumen' => 'required|string',
             'file' => 'required|file|max:10240',
         ]);
+
+        $aset = Aset::findOrFail($validated['aset_id']);
+
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $file = $request->file('file');
         $path = $file->store('dokumen/' . $validated['aset_id'], 'public');
         $dokumen = DokumenAset::create([

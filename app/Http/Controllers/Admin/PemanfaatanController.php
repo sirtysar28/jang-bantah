@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
 use App\Models\PemanfaatanAset;
+use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +13,12 @@ class PemanfaatanController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+
         $query = PemanfaatanAset::with(['aset.kecamatan', 'aset.opd', 'creator']);
+
+        // OPD hanya melihat pemanfaatan aset milik OPD-nya sendiri
+        OpdAccess::scopeAsetRelation($query, $user);
 
         if ($request->filled('kategori')) {
             $query->where('kategori', $request->kategori);
@@ -27,6 +33,8 @@ class PemanfaatanController extends Controller
 
     public function store(Request $request, Aset $aset)
     {
+        OpdAccess::authorize(Auth::user(), $aset);
+
         $validated = $request->validate([
             'kategori' => 'required|in:disewakan,kerjasama,pinjam_pakai,bangun_guna_serah,idle_asset',
             'nama_pihak' => 'nullable|string|max:255',
@@ -52,6 +60,10 @@ class PemanfaatanController extends Controller
 
     public function update(Request $request, PemanfaatanAset $pemanfaatan)
     {
+        if ($pemanfaatan->aset) {
+            OpdAccess::authorize(Auth::user(), $pemanfaatan->aset);
+        }
+
         $validated = $request->validate([
             'kategori' => 'required|in:disewakan,kerjasama,pinjam_pakai,bangun_guna_serah,idle_asset',
             'nama_pihak' => 'nullable|string|max:255',
