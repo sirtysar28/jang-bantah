@@ -1,6 +1,23 @@
 @extends('layouts.admin')
 @section('page-title', 'Detail Aset')
 
+@php
+    // Titik untuk link Bumi ATR/BPN: pakai koordinat aset; kalau kosong tapi ada polygon, pakai titik tengah polygon
+    $bhumiLat = $aset->latitude;
+    $bhumiLng = $aset->longitude;
+    if ((!$bhumiLat || !$bhumiLng) && !empty($aset->polygon['coordinates'][0])) {
+        $ring = $aset->polygon['coordinates'][0];
+        $ring = array_slice($ring, 0, count($ring) - 1); // buang titik penutup
+        if (count($ring) >= 3) {
+            $bhumiLat = round(array_sum(array_column($ring, 1)) / count($ring), 8); // GeoJSON [lng, lat]
+            $bhumiLng = round(array_sum(array_column($ring, 0)) / count($ring), 8);
+        }
+    }
+    $bhumiUrl = ($bhumiLat && $bhumiLng)
+        ? 'https://bhumi.atrbpn.go.id/peta?lat=' . $bhumiLat . '&lng=' . $bhumiLng . '&z=17'
+        : 'https://bhumi.atrbpn.go.id/peta';
+@endphp
+
 @section('content')
 <div class="row">
     <div class="col-lg-8">
@@ -43,7 +60,7 @@
                             <tr><td class="fw-500" style="font-size:.85rem;">Status</td><td><span class="badge bg-{{ $aset->status === 'aktif' ? 'success' : 'danger' }}">{{ strtoupper(str_replace('_', ' ', $aset->status)) }}</span></td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Tahun Perolehan</td><td style="font-size:.85rem;">{{ $aset->tahun_perolehan ?? '-' }}</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Sumber Perolehan</td><td style="font-size:.85rem;">{{ strtoupper(str_replace('_', ' ', $aset->sumber_perolehan ?? '-')) }}</td></tr>
-                            <tr><td class="fw-500" style="font-size:.85rem;">Koordinat</td><td style="font-size:.85rem;">@if($aset->latitude) {{ $aset->latitude }}, {{ $aset->longitude }} <a href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary ms-1"><i class="fas fa-map-marker-alt"></i> Maps</a> @else - @endif <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success ms-1" title="Cek titik koordinat bidang di Bumi ATR/BPN"><i class="fas fa-external-link-alt"></i> Bumi ATR/BPN</a></td></tr>
+                            <tr><td class="fw-500" style="font-size:.85rem;">Koordinat</td><td style="font-size:.85rem;">@if($aset->latitude) {{ $aset->latitude }}, {{ $aset->longitude }} <a href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary ms-1"><i class="fas fa-map-marker-alt"></i> Maps</a> @else - @endif <a href="{{ $bhumiUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success ms-1" title="Cek titik koordinat bidang di Bumi ATR/BPN (langsung menuju koordinat aset)"><i class="fas fa-external-link-alt"></i> Bumi ATR/BPN</a></td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Polygon GIS</td><td style="font-size:.85rem;">@if($aset->polygon)
                                 <span class="badge bg-success"><i class="fas fa-draw-polygon me-1"></i>Ada — {{ max(0, count($aset->polygon['coordinates'][0] ?? []) - 1) }} titik sudut</span>
                                 @else <span class="badge bg-secondary">Belum ada — gambar bidang lewat menu Edit</span> @endif</td></tr>
@@ -372,7 +389,7 @@
                         <i class="fas fa-external-link-alt me-1"></i>Google Maps
                     </a>
                     @endif
-                    <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">
+                    <a href="{{ $bhumiUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success" title="Buka peta ATR/BPN tepat di titik koordinat aset">
                         <i class="fas fa-external-link-alt me-1"></i>Bumi ATR/BPN
                     </a>
                 </p>

@@ -118,7 +118,7 @@
                 <div class="col-md-12">
                     <label class="form-label fw-500" style="font-size:.85rem;">
                         Latitude / Longitude
-                        <span class="text-muted fw-normal" style="font-size:.7rem;">— titik koordinat dapat dicek di <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener">Bumi ATR/BPN <i class="fas fa-external-link-alt"></i></a></span>
+                        <span class="text-muted fw-normal" style="font-size:.7rem;">— titik koordinat dapat dicek di <a href="https://bhumi.atrbpn.go.id/peta" target="_blank" rel="noopener" class="bhumi-link">Bumi ATR/BPN <i class="fas fa-external-link-alt"></i></a></span>
                     </label>
                     <div class="row g-2">
                         <div class="col-md-6">

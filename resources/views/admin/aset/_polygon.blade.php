@@ -9,6 +9,9 @@
 @php
     $polyCenterLat = $centerLat ?: 1.65;   // default: Halmahera Barat
     $polyCenterLng = $centerLng ?: 127.8;
+    $bhumiStartUrl = ($centerLat && $centerLng)
+        ? 'https://bhumi.atrbpn.go.id/peta?lat=' . $centerLat . '&lng=' . $centerLng . '&z=17'
+        : 'https://bhumi.atrbpn.go.id/peta';
 @endphp
 <div class="col-12">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
@@ -17,7 +20,7 @@
             <span class="badge bg-light text-dark border ms-1" style="font-size:.62rem;">Opsional</span>
         </label>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success" title="Buka Bumi ATR/BPN untuk melihat titik koordinat bidang tanah">
+            <a href="{{ $bhumiStartUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success bhumi-link" id="bhumiBtn" title="Buka Bumi ATR/BPN tepat di titik koordinat aset (bukan lokasi device)">
                 <i class="fas fa-external-link-alt me-1"></i>Ambil Titik di Bumi ATR/BPN
             </a>
             <button type="button" class="btn btn-sm btn-outline-secondary" id="polyUndo"><i class="fas fa-undo me-1"></i>Titik Terakhir</button>
@@ -29,8 +32,7 @@
     <div class="d-flex justify-content-between align-items-center mt-1">
         <small class="text-muted" style="font-size:.7rem;">
             <i class="fas fa-info-circle me-1"></i>Klik peta untuk menambah titik sudut bidang (min. 3 titik agar polygon terbentuk). Geser titik untuk menyesuaikan batas.
-            Titik koordinat dapat dicek terlebih dahulu di <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener">Bumi ATR/BPN</a> (menu peta bidang),
-            lalu klik posisi yang sama pada peta di sini. Latitude/Longitude otomatis terisi titik tengah polygon.
+            Latitude/Longitude otomatis terisi titik tengah polygon. Tombol <b>Ambil Titik di Bumi ATR/BPN</b> otomatis mengikuti koordinat yang terisi.
         </small>
         <span class="badge bg-secondary ms-2 flex-shrink-0" id="polyInfo">0 titik</span>
     </div>
@@ -62,6 +64,26 @@
     var shapeLayer = null;   // polygon/polyline preview
     var vertices = []; // array [lat, lng]
 
+    // === Sinkronkan link Bumi ATR/BPN dengan koordinat yang diinput ===
+    // Situs bhumi.atrbpn.go.id hanya pakai geolocate device bila TANPA param ?lat=&lng=,
+    // jadi selalu sertakan koordinat agar peta langsung menuju titik aset.
+    function syncBhumiLinks() {
+        if (!latInput || !lngInput) return;
+        var lat = parseFloat(latInput.value);
+        var lng = parseFloat(lngInput.value);
+        var url = (isNaN(lat) || isNaN(lng))
+            ? 'https://bhumi.atrbpn.go.id/peta'
+            : 'https://bhumi.atrbpn.go.id/peta?lat=' + lat + '&lng=' + lng + '&z=17';
+        document.querySelectorAll('a.bhumi-link').forEach(function (a) { a.href = url; });
+    }
+    if (latInput && lngInput) {
+        ['input', 'change'].forEach(function (ev) {
+            latInput.addEventListener(ev, syncBhumiLinks);
+            lngInput.addEventListener(ev, syncBhumiLinks);
+        });
+    }
+    syncBhumiLinks();
+
     function syncInput() {
         if (vertices.length >= 3) {
             var ring = vertices.map(function (v) { return [v[1], v[0]]; }); // GeoJSON: [lng, lat]
@@ -76,6 +98,7 @@
                 vertices.forEach(function (v) { sLat += v[0]; sLng += v[1]; });
                 latInput.value = (sLat / n).toFixed(8);
                 lngInput.value = (sLng / n).toFixed(8);
+                syncBhumiLinks();
             }
         } else {
             input.value = '';
