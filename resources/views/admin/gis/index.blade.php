@@ -84,19 +84,7 @@ function loadMap() {
         .then(data => {
             data.features.forEach(f => {
                 var p = f.properties;
-                // GeoJSON Point: coordinates = [longitude, latitude]
-                var coords = (f.geometry && f.geometry.type === 'Point' && f.geometry.coordinates)
-                    ? [f.geometry.coordinates[1], f.geometry.coordinates[0]]
-                    : null;
-                if (!coords) return;
-
                 var color = getMarkerColor(p.status, p.sertifikat);
-                var icon = L.divIcon({
-                    className: '',
-                    html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.3);"></div>',
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7]
-                });
 
                 var popup = '<div style="min-width:200px;font-size:13px;">' +
                     '<h6 style="margin:0 0 8px;">' + p.nama_aset + '</h6>' +
@@ -111,8 +99,32 @@ function loadMap() {
                     (p.foto ? '<img src="' + p.foto + '" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-top:8px;">' : '') +
                     '</div>';
 
-                var marker = L.marker(coords, {icon: icon}).addTo(map).bindPopup(popup);
-                markers.push(marker);
+                var layer = null;
+
+                // ── Polygon bidang tanah (dari editor GIS form aset) ──
+                if (f.geometry && f.geometry.type === 'Polygon' && f.geometry.coordinates && f.geometry.coordinates.length) {
+                    layer = L.geoJSON(f.geometry, {
+                        style: {
+                            color: color,
+                            weight: 2,
+                            fillColor: color,
+                            fillOpacity: 0.3
+                        }
+                    }).addTo(map).bindPopup(popup);
+                }
+                // ── Titik (fallback aset tanpa polygon) ──
+                else if (f.geometry && f.geometry.type === 'Point' && f.geometry.coordinates) {
+                    var coords = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+                    var icon = L.divIcon({
+                        className: '',
+                        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.3);"></div>',
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    });
+                    layer = L.marker(coords, { icon: icon }).addTo(map).bindPopup(popup);
+                }
+
+                if (layer) markers.push(layer);
             });
 
             if (markers.length > 0) {

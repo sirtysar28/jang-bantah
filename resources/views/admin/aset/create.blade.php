@@ -115,14 +115,25 @@
                         <option value="lainnya">Lainnya</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-500" style="font-size:.85rem;">Latitude</label>
-                    <input type="number" step="any" name="latitude" class="form-control" id="lat" value="{{ old('latitude') }}">
+                <div class="col-md-12">
+                    <label class="form-label fw-500" style="font-size:.85rem;">
+                        Latitude / Longitude
+                        <span class="text-muted fw-normal" style="font-size:.7rem;">— titik koordinat dapat dicek di <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener">Bumi ATR/BPN <i class="fas fa-external-link-alt"></i></a></span>
+                    </label>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <input type="number" step="any" name="latitude" class="form-control" id="lat" placeholder="Latitude" value="{{ old('latitude') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="number" step="any" name="longitude" class="form-control" id="lng" placeholder="Longitude" value="{{ old('longitude') }}">
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-500" style="font-size:.85rem;">Longitude</label>
-                    <input type="number" step="any" name="longitude" class="form-control" id="lng" value="{{ old('longitude') }}">
-                </div>
+                @include('admin.aset._polygon', [
+                    'polygonJson' => old('polygon'),
+                    'centerLat' => old('latitude'),
+                    'centerLng' => old('longitude'),
+                ])
                 <div class="col-md-12">
                     <label class="form-label fw-500" style="font-size:.85rem;">Alamat</label>
                     <textarea name="alamat" class="form-control" rows="2">{{ old('alamat') }}</textarea>

@@ -43,7 +43,10 @@
                             <tr><td class="fw-500" style="font-size:.85rem;">Status</td><td><span class="badge bg-{{ $aset->status === 'aktif' ? 'success' : 'danger' }}">{{ strtoupper(str_replace('_', ' ', $aset->status)) }}</span></td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Tahun Perolehan</td><td style="font-size:.85rem;">{{ $aset->tahun_perolehan ?? '-' }}</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Sumber Perolehan</td><td style="font-size:.85rem;">{{ strtoupper(str_replace('_', ' ', $aset->sumber_perolehan ?? '-')) }}</td></tr>
-                            <tr><td class="fw-500" style="font-size:.85rem;">Koordinat</td><td style="font-size:.85rem;">@if($aset->latitude) {{ $aset->latitude }}, {{ $aset->longitude }} <a href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary ms-1"><i class="fas fa-map-marker-alt"></i> Maps</a> @else - @endif</td></tr>
+                            <tr><td class="fw-500" style="font-size:.85rem;">Koordinat</td><td style="font-size:.85rem;">@if($aset->latitude) {{ $aset->latitude }}, {{ $aset->longitude }} <a href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary ms-1"><i class="fas fa-map-marker-alt"></i> Maps</a> @else - @endif <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success ms-1" title="Cek titik koordinat bidang di Bumi ATR/BPN"><i class="fas fa-external-link-alt"></i> Bumi ATR/BPN</a></td></tr>
+                            <tr><td class="fw-500" style="font-size:.85rem;">Polygon GIS</td><td style="font-size:.85rem;">@if($aset->polygon)
+                                <span class="badge bg-success"><i class="fas fa-draw-polygon me-1"></i>Ada — {{ max(0, count($aset->polygon['coordinates'][0] ?? []) - 1) }} titik sudut</span>
+                                @else <span class="badge bg-secondary">Belum ada — gambar bidang lewat menu Edit</span> @endif</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Alamat</td><td style="font-size:.85rem;">{{ $aset->alamat ?? '-' }}</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Keterangan</td><td style="font-size:.85rem;">{{ $aset->keterangan ?? '-' }}</td></tr>
                         </table>
@@ -356,13 +359,21 @@
     <!-- Sidebar Info -->
     <div class="col-lg-4">
         <div class="card">
-            <div class="card-header"><i class="fas fa-map me-2"></i>Lokasi</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-map me-2"></i>Lokasi / GIS</span>
+                @if($aset->polygon)<span class="badge bg-success" style="font-size:.65rem;"><i class="fas fa-draw-polygon me-1"></i>Polygon Bidang</span>@endif
+            </div>
             <div class="card-body">
-                @if($aset->latitude && $aset->longitude)
-                <div id="mapDetail" style="height:250px;border-radius:8px;"></div>
-                <p class="text-center mt-2 mb-0" style="font-size:.8rem;">
+                @if($aset->latitude && $aset->longitude || $aset->polygon)
+                <div id="mapDetail" style="height:280px;border-radius:8px;"></div>
+                <p class="text-center mt-2 mb-0 d-flex justify-content-center gap-1 flex-wrap" style="font-size:.8rem;">
+                    @if($aset->latitude && $aset->longitude)
                     <a href="https://www.google.com/maps?q={{ $aset->latitude }},{{ $aset->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-external-link-alt me-1"></i>Buka di Google Maps
+                        <i class="fas fa-external-link-alt me-1"></i>Google Maps
+                    </a>
+                    @endif
+                    <a href="https://bhumi.atrbpn.go.id/" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Bumi ATR/BPN
                     </a>
                 </p>
                 @else
@@ -442,12 +453,41 @@ $(document).on('click', '.btn-delete', function(e) {
     });
 });
 
-@if($aset->latitude && $aset->longitude)
-var map = L.map('mapDetail').setView([{{ $aset->latitude }}, {{ $aset->longitude }}], 15);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OSM'
-}).addTo(map);
-L.marker([{{ $aset->latitude }}, {{ $aset->longitude }}]).addTo(map).bindPopup('<b>{{ $aset->nama_aset }}</b>').openPopup();
+@if($aset->latitude && $aset->longitude || $aset->polygon)
+var mapDetailEl = document.getElementById('mapDetail');
+if (mapDetailEl) {
+    var mapD = L.map('mapDetail');
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri World Imagery', maxZoom: 19
+    }).addTo(mapD);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OSM', maxZoom: 19
+    }).addTo(mapD);
+
+    var detailLayers = [];
+
+    @if($aset->polygon)
+    var asetPolygon = L.geoJSON(@json($aset->polygon), {
+        style: {
+            color: '#f39c12',
+            weight: 3,
+            fillColor: '#f39c12',
+            fillOpacity: 0.35
+        }
+    }).addTo(mapD);
+    asetPolygon.bindPopup('<b>{{ addslashes($aset->nama_aset) }}</b><br><small>Batas bidang tanah (polygon GIS)</small>');
+    detailLayers.push(asetPolygon);
+    @endif
+
+    @if($aset->latitude && $aset->longitude)
+    detailLayers.push(L.marker([{{ $aset->latitude }}, {{ $aset->longitude }}]).addTo(mapD)
+        .bindPopup('<b>{{ addslashes($aset->nama_aset) }}</b>').openPopup());
+    @endif
+
+    if (detailLayers.length) {
+        mapD.fitBounds(L.featureGroup(detailLayers).getBounds().pad(0.3));
+    }
+}
 @endif
 </script>
 @endpush

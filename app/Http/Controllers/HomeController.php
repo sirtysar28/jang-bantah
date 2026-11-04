@@ -96,10 +96,14 @@ class HomeController
         $focusRegister = $request->filled('aset') ? $request->string('aset')->trim() : null;
 
         // Aset tampil di peta: semua yang tervalidasi, plus (jika ada
-        // parameter ?aset=) bidang terkait walau belum tervalidasi
+        // parameter ?aset=) bidang terkait walau belum tervalidasi.
+        // Tampil bila punya koordinat titik ATAU polygon bidang.
         $asets = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum'])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
+            ->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereNotNull('latitude')->whereNotNull('longitude');
+                })->orWhereNotNull('polygon');
+            })
             ->where(function ($q) use ($focusRegister) {
                 $q->where('is_validated', true);
                 if ($focusRegister) {
@@ -208,11 +212,12 @@ class HomeController
             $h .= '</div>';
 
             $mapData[] = [
-                'lat'   => (float) $a->latitude,
-                'lng'   => (float) $a->longitude,
-                'group' => $grp,
-                'popup' => $h,
-                'nr'    => (string) $a->nomor_register,
+                'lat'     => (float) $a->latitude,
+                'lng'     => (float) $a->longitude,
+                'group'   => $grp,
+                'popup'   => $h,
+                'nr'      => (string) $a->nomor_register,
+                'polygon' => $a->polygon, // GeoJSON Polygon bidang tanah (null bila belum digambar)
             ];
         }
 

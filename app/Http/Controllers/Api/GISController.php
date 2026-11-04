@@ -27,7 +27,8 @@ class GISController extends Controller
 
         $features = $asets->map(fn($a) => [
             'type' => 'Feature',
-            'geometry' => ['type' => 'Point', 'coordinates' => [$a->longitude, $a->latitude]],
+            // Gunakan polygon bidang bila ada, jika tidak titik koordinat
+            'geometry' => $a->polygon ?: ['type' => 'Point', 'coordinates' => [$a->longitude, $a->latitude]],
             'properties' => [
                 'id' => $a->id, 'nama_aset' => $a->nama_aset, 'kecamatan' => $a->kecamatan?->nama,
                 'opd' => $a->opd?->nama, 'luas' => $a->luas, 'nilai_aset' => $a->nilai_aset,

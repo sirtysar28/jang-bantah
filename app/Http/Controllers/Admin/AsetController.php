@@ -156,9 +156,30 @@ class AsetController extends Controller
             'alamat' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'polygon' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if ($value === null || $value === '') {
+                        return; // kosong = tanpa polygon
+                    }
+                    $data = json_decode($value, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $fail('Data polygon tidak valid (bukan JSON yang valid).');
+                        return;
+                    }
+                    if (($data['type'] ?? null) !== 'Polygon' || empty($data['coordinates'][0]) || count($data['coordinates'][0]) < 4) {
+                        $fail('Polygon harus GeoJSON Polygon dengan minimal 3 titik sudut.');
+                    }
+                },
+            ],
             'foto_lokasi' => 'nullable|image|max:5120',
             'keterangan' => 'nullable|string',
         ]);
+
+        // Polygon dikirim sebagai string JSON dari editor peta — decode agar
+        // tersimpan sebagai JSON native oleh cast "array" di model Aset.
+        $validated['polygon'] = $request->filled('polygon') ? json_decode($request->input('polygon'), true) : null;
 
         if ($request->hasFile('foto_lokasi')) {
             $validated['foto_lokasi'] = $request->file('foto_lokasi')->store('aset/foto', 'public');
@@ -267,11 +288,32 @@ class AsetController extends Controller
             'alamat' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'polygon' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if ($value === null || $value === '') {
+                        return; // kosong = hapus polygon
+                    }
+                    $data = json_decode($value, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $fail('Data polygon tidak valid (bukan JSON yang valid).');
+                        return;
+                    }
+                    if (($data['type'] ?? null) !== 'Polygon' || empty($data['coordinates'][0]) || count($data['coordinates'][0]) < 4) {
+                        $fail('Polygon harus GeoJSON Polygon dengan minimal 3 titik sudut.');
+                    }
+                },
+            ],
             'foto_lokasi' => 'nullable|image|max:5120',
             'keterangan' => 'nullable|string',
             'is_validated' => 'boolean',
             'is_digital' => 'boolean',
         ]);
+
+        // Polygon dikirim sebagai string JSON dari editor peta — decode agar
+        // tersimpan sebagai JSON native oleh cast "array" di model Aset.
+        $validated['polygon'] = $request->filled('polygon') ? json_decode($request->input('polygon'), true) : null;
 
         if ($request->hasFile('foto_lokasi')) {
             if ($aset->foto_lokasi) Storage::disk('public')->delete($aset->foto_lokasi);

@@ -99,18 +99,37 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 var allMarkers = [];
+var allPolygons = [];
 var markerGroups = { bersertifikat: [], proses: [], belum: [], sengketa: [] };
 
 mapAsets.forEach(function(a) {
     var icon = createIcon(groupColors[a.group] || '#95a5a6');
-    var marker = L.marker([a.lat, a.lng], { icon: icon })
-        .addTo(map)
-        .bindPopup(a.popup, { maxWidth: 320 });
 
-    marker.nr = a.nr; // nomor register — dipakai fokus QR Code
-    allMarkers.push(marker);
-    if (markerGroups[a.group]) {
-        markerGroups[a.group].push(marker);
+    // Polygon batas bidang tanah (bila sudah digambar di GIS)
+    if (a.polygon && a.polygon.type === 'Polygon' && a.polygon.coordinates && a.polygon.coordinates.length) {
+        var poly = L.geoJSON(a.polygon, {
+            style: {
+                color: groupColors[a.group] || '#95a5a6',
+                weight: 2,
+                fillColor: groupColors[a.group] || '#95a5a6',
+                fillOpacity: 0.3
+            }
+        }).addTo(map).bindPopup(a.popup, { maxWidth: 320 });
+        poly.nr = a.nr;
+        poly.grp = a.group;
+        allPolygons.push(poly);
+    }
+
+    if (a.lat && a.lng) {
+        var marker = L.marker([a.lat, a.lng], { icon: icon })
+            .addTo(map)
+            .bindPopup(a.popup, { maxWidth: 320 });
+
+        marker.nr = a.nr; // nomor register — dipakai fokus QR Code
+        allMarkers.push(marker);
+        if (markerGroups[a.group]) {
+            markerGroups[a.group].push(marker);
+        }
     }
 });
 
@@ -118,36 +137,43 @@ mapAsets.forEach(function(a) {
 var focusNr = {{ Illuminate\Support\Js::from($focusRegister ?? null) }};
 if (focusNr) {
     var focusMarker = allMarkers.find(function(m) { return m.nr === focusNr; });
-    if (focusMarker) {
-        map.setView([focusMarker.getLatLng().lat, focusMarker.getLatLng().lng], 16);
-        focusMarker.openPopup();
+    var focusPoly = allPolygons.find(function(pg) { return pg.nr === focusNr; });
+    if (focusMarker || focusPoly) {
+        var focusBounds = [];
+        if (focusMarker) focusBounds.push(focusMarker);
+        if (focusPoly) focusBounds.push(focusPoly);
+        map.fitBounds(L.featureGroup(focusBounds).getBounds().pad(0.2));
+        if (focusMarker) focusMarker.openPopup();
+        else if (focusPoly) focusPoly.openPopup();
     } else {
-        if (allMarkers.length > 0) {
-            map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.1));
+        if (allMarkers.length > 0 || allPolygons.length > 0) {
+            map.fitBounds(L.featureGroup(allMarkers.concat(allPolygons)).getBounds().pad(0.1));
         } else {
             map.setView([1.65, 127.8], 11);
         }
     }
-} else if (allMarkers.length > 0) {
-    map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.1));
+} else if (allMarkers.length > 0 || allPolygons.length > 0) {
+    map.fitBounds(L.featureGroup(allMarkers.concat(allPolygons)).getBounds().pad(0.1));
 } else {
     map.setView([1.65, 127.8], 11);
 }
 
 function filterMarkers(type) {
     allMarkers.forEach(function(m) { map.addLayer(m); });
+    allPolygons.forEach(function(pg) { map.addLayer(pg); });
     if (type === 'semua') return;
 
-    var allowed = [type];
     allMarkers.forEach(function(m) {
         var show = false;
-        allowed.forEach(function(g) {
-            if (markerGroups[g] && markerGroups[g].indexOf(m) >= 0) show = true;
-        });
+        if (markerGroups[type] && markerGroups[type].indexOf(m) >= 0) show = true;
         if (!show) map.removeLayer(m);
     });
+    allPolygons.forEach(function(pg) {
+        if (pg.grp !== type) map.removeLayer(pg);
+    });
 
-    var visible = allMarkers.filter(function(m) { return map.hasLayer(m); });
+    var visible = allMarkers.filter(function(m) { return map.hasLayer(m); })
+        .concat(allPolygons.filter(function(pg) { return map.hasLayer(pg); }));
     if (visible.length > 0) {
         map.fitBounds(L.featureGroup(visible).getBounds().pad(0.1));
     }
