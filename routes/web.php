@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/tentang', [HomeController::class, 'about'])->name('about');
 Route::get('/peta-publik', [HomeController::class, 'mapPublic'])->name('map.public');
+Route::get('/data-aset', [HomeController::class, 'dataAset'])->name('aset.publik');
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +47,15 @@ Route::middleware(['auth', 'role:super_admin,admin_aset,opd,pimpinan'])->prefix(
     Route::get('audit-log', [App\Http\Controllers\Admin\UserManagementController::class, 'auditLog'])->name('audit-log')->middleware('role:super_admin');
 
     // Aset (Data Tanah)
+    // Import Excel & template — didaftarkan SEBELUM resource agar tidak
+    // tertangkap pola "aset/{aset}" dari Route::resource
+    Route::get('aset/import', [App\Http\Controllers\Admin\AsetController::class, 'importForm'])->name('aset.import.form')->middleware('role:super_admin,admin_aset');
+    Route::post('aset/import', [App\Http\Controllers\Admin\AsetController::class, 'import'])->name('aset.import')->middleware('role:super_admin,admin_aset');
+    Route::get('aset/import/template', [App\Http\Controllers\Admin\AsetController::class, 'template'])->name('aset.template')->middleware('role:super_admin,admin_aset');
+
+    // QR Code identifikasi aset (fitur RAB)
+    Route::get('aset/{aset}/qrcode', [App\Http\Controllers\Admin\AsetController::class, 'qrCode'])->name('aset.qrcode');
+
     Route::resource('aset', App\Http\Controllers\Admin\AsetController::class)->except(['destroy']);
     Route::delete('aset/{aset}', [App\Http\Controllers\Admin\AsetController::class, 'destroy'])->name('aset.destroy')->middleware('role:super_admin');
     Route::post('aset/{aset}/validate', [App\Http\Controllers\Admin\AsetController::class, 'validateAset'])->name('aset.validate')->middleware('role:super_admin,admin_aset');
@@ -53,6 +63,7 @@ Route::middleware(['auth', 'role:super_admin,admin_aset,opd,pimpinan'])->prefix(
     // Dokumen
     Route::post('aset/{aset}/dokumen', [App\Http\Controllers\Admin\DokumenController::class, 'store'])->name('dokumen.store');
     Route::get('dokumen/{dokumen}/download', [App\Http\Controllers\Admin\DokumenController::class, 'download'])->name('dokumen.download');
+    Route::get('dokumen/{dokumen}/preview', [App\Http\Controllers\Admin\DokumenController::class, 'preview'])->name('dokumen.preview');
     Route::delete('dokumen/{dokumen}', [App\Http\Controllers\Admin\DokumenController::class, 'destroy'])->name('dokumen.destroy');
 
     // Pengamanan Administrasi

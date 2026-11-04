@@ -24,7 +24,16 @@ class WebsiteController extends Controller
             $content[$key] = WebsiteContent::get($key);
         }
 
-        return view('admin.website.index', compact('content'));
+        // Media sosial dinamis (icon + URL, jumlah tidak dibatasi)
+        $socialLinks = WebsiteContent::socialLinks();
+
+        // Daftar gambar hero (multi-upload → slider)
+        $heroPaths = WebsiteContent::heroImagePaths();
+
+        // Daftar foto galeri kegiatan (multi-upload)
+        $galeriPaths = WebsiteContent::galeriPhotoPaths();
+
+        return view('admin.website.index', compact('content', 'socialLinks', 'heroPaths', 'galeriPaths'));
     }
 
     /**
@@ -35,13 +44,21 @@ class WebsiteController extends Controller
     {
         $defaults = WebsiteContent::defaults();
 
-        // web_hero_image ditangani terpisah sebagai upload file
-        $fields = array_values(array_diff(array_keys($defaults), ['web_hero_image']));
+        // web_hero_image/web_hero_images & web_galeri_fotos ditangani terpisah sebagai upload file,
+        // web_social_links ditangani terpisah sebagai daftar dinamis (icon + URL)
+        $fields = array_values(array_diff(
+            array_keys($defaults),
+            ['web_hero_image', 'web_hero_images', 'web_galeri_fotos', 'web_social_links']
+        ));
 
         $rules = collect($fields)->mapWithKeys(fn ($f) => [$f => 'nullable|string|max:3000'])->all();
         $rules['web_hero_type'] = 'nullable|in:video,image';
-        $rules['web_hero_image'] = 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120'; // maks 5MB
-        $rules['hapus_gambar'] = 'nullable|boolean';
+        $rules['web_hero_image']   = 'array'; // multi-upload: bisa lebih dari satu gambar
+        $rules['web_hero_image.*'] = 'image|mimes:jpg,jpeg,png,webp|max:5120'; // tiap file maks 5MB
+        $rules['hapus_gambar']   = 'nullable|array'; // daftar path gambar yang dicentang untuk dihapus
+        $rules['galeri_foto']    = 'array'; // multi-upload foto galeri kegiatan
+        $rules['galeri_foto.*']  = 'image|mimes:jpg,jpeg,png,webp|max:5120';
+        $rules['hapus_galeri']   = 'nullable|array';
 
         $validated = $request->validate($rules);
 
@@ -62,21 +79,79 @@ class WebsiteController extends Controller
             Setting::set($key, $value);
         }
 
-        // ── Upload / hapus gambar background hero ──
-        if ($request->hasFile('web_hero_image')) {
-            // Hapus gambar lama bila ada
-            if ($old = WebsiteContent::heroImagePath()) {
-                Storage::disk('public')->delete($old);
+        // ── Media sosial dinamis: susun array icon+URL lalu simpan sebagai JSON ──
+        $icons = (array) $request->input('social_icon', []);
+        $urls  = (array) $request->input('social_url', []);
+
+        $allowedIcons = array_keys(WebsiteContent::socialIconOptions());
+        $socialLinks  = [];
+
+        foreach ($urls as $i => $url) {
+            $url  = trim((string) $url);
+            $icon = trim((string) ($icons[$i] ?? ''));
+
+            // Baris tanpa URL dianggap kosong & dilewati
+            if ($url === '' || $url === '#') {
+                continue;
+            }
+            if (! in_array($icon, $allowedIcons, true)) {
+                $icon = 'fas fa-globe';
             }
 
-            $path = $request->file('web_hero_image')->store('website', 'public');
-            Setting::set('web_hero_image', $path);
-        } elseif ($request->boolean('hapus_gambar')) {
-            if ($old = WebsiteContent::heroImagePath()) {
-                Storage::disk('public')->delete($old);
-            }
-            Setting::set('web_hero_image', '');
+            $socialLinks[] = ['icon' => $icon, 'url' => $url];
         }
+
+        Setting::set('web_social_links', json_encode($socialLinks, JSON_UNESCAPED_SLASHES));
+
+        // ── Gambar background hero (multi-upload → slider otomatis di depan) ──
+        // Daftar gambar saat ini (bisa berasal dari JSON baru atau fallback legacy)
+        $heroPaths = WebsiteContent::heroImagePaths();
+
+        // 1) Hapus gambar yang dicentang "hapus"
+        $hapus = array_filter((array) $request->input('hapus_gambar', []));
+        foreach ($hapus as $path) {
+            $path = trim((string) $path);
+            if (in_array($path, $heroPaths, true)) {
+                Storage::disk('public')->delete($path);
+                $heroPaths = array_values(array_diff($heroPaths, [$path]));
+            }
+        }
+
+        // 2) Tambahkan gambar baru yang diupload (jumlah tidak dibatasi)
+        if ($request->hasFile('web_hero_image')) {
+            foreach ($request->file('web_hero_image') as $file) {
+                if ($file?->isValid()) {
+                    $heroPaths[] = $file->store('website', 'public');
+                }
+            }
+        }
+
+        // 3) Simpan daftar sebagai JSON + mirror ke key legacy (gambar pertama)
+        Setting::set('web_hero_images', json_encode(array_values($heroPaths), JSON_UNESCAPED_SLASHES));
+        Setting::set('web_hero_image', $heroPaths[0] ?? '');
+
+        // ── Foto galeri kegiatan (multi-upload, tampil di halaman depan) ──
+        $galeriPaths = WebsiteContent::galeriPhotoPaths();
+
+        // 1) Hapus foto yang dicentang "hapus"
+        foreach (array_filter((array) $request->input('hapus_galeri', [])) as $path) {
+            $path = trim((string) $path);
+            if (in_array($path, $galeriPaths, true)) {
+                Storage::disk('public')->delete($path);
+                $galeriPaths = array_values(array_diff($galeriPaths, [$path]));
+            }
+        }
+
+        // 2) Tambahkan foto baru (jumlah tidak dibatasi)
+        if ($request->hasFile('galeri_foto')) {
+            foreach ($request->file('galeri_foto') as $file) {
+                if ($file?->isValid()) {
+                    $galeriPaths[] = $file->store('website/galeri', 'public');
+                }
+            }
+        }
+
+        Setting::set('web_galeri_fotos', json_encode(array_values($galeriPaths), JSON_UNESCAPED_SLASHES));
 
         return redirect()->route('admin.website.index')
             ->with('success', 'Konten website berhasil diperbarui.');

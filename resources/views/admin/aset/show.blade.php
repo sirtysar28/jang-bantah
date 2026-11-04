@@ -16,10 +16,10 @@
                         <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-name="{{ $aset->nama_aset }}"><i class="fas fa-trash me-1"></i>Hapus</button>
                     </form>
                     @endif
-                    @if(!$aset->is_validated && auth()->user()->role !== 'opd')
+                    @if(!$aset->is_validated && in_array(auth()->user()->role, ['super_admin', 'admin_aset']))
                     <form method="POST" action="{{ route('admin.aset.validate', $aset) }}" style="display:inline;">
                         @csrf @method('POST')
-                        <button class="btn btn-sm btn-outline-success"><i class="fas fa-check"></i> Validasi</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="return confirm('Setujui aset ini agar tampil di halaman publik?')"><i class="fas fa-check-double me-1"></i> Setujui & Publikasikan</button>
                     </form>
                     @endif
                 </div>
@@ -94,6 +94,7 @@
                                     <td>{{ $doc->file_name }}</td>
                                     <td>{{ $doc->tanggal_dokumen?->format('d/m/Y') ?? '-' }}</td>
                                     <td>
+                                        <a href="{{ route('admin.dokumen.preview', $doc) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Preview dokumen"><i class="fas fa-eye"></i></a>
                                         <a href="{{ route('admin.dokumen.download', $doc) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></a>
                                         <form method="POST" action="{{ route('admin.dokumen.destroy', $doc) }}" style="display:inline;">@csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button></form>
@@ -371,10 +372,28 @@
         </div>
 
         <div class="card mt-3">
+            <div class="card-header"><i class="fas fa-qrcode me-2"></i>QR Code Identifikasi Aset</div>
+            <div class="card-body text-center">
+                <img src="{{ route('admin.aset.qrcode', $aset) }}" alt="QR Code {{ $aset->nomor_register }}" style="width:180px;height:180px;border:1px solid #dee2e6;border-radius:8px;padding:6px;background:#fff;">
+                <p class="mt-2 mb-2 text-muted" style="font-size:.78rem;">
+                    QR berisi link peta publik yang otomatis menampilkan bidang "{{ \Illuminate\Support\Str::limit($aset->nama_aset, 30) }}". Tempel di pal/tanda bidang tanah — cukup dipindai kamera HP.
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{{ route('admin.aset.qrcode', ['aset' => $aset, 'download' => 1]) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download me-1"></i>Download QR
+                    </a>
+                    <a href="{{ route('map.public', ['aset' => $aset->nomor_register]) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-external-link-alt me-1"></i>Tes Link
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
             <div class="card-header"><i class="fas fa-info-circle me-2"></i>Info</div>
             <div class="card-body">
                 <table class="table table-sm mb-0" style="font-size:.85rem;">
-                    <tr><td>Validasi</td><td><span class="badge bg-{{ $aset->is_validated ? 'success' : 'warning' }}">{{ $aset->is_validated ? 'Sudah' : 'Belum' }}</span></td></tr>
+                    <tr><td>Validasi</td><td><span class="badge bg-{{ $aset->is_validated ? 'success' : 'warning text-dark' }}">{{ $aset->is_validated ? 'Sudah — tampil publik' : 'Menunggu persetujuan Admin Aset / Super Admin' }}</span></td></tr>
                     <tr><td>Digital</td><td><span class="badge bg-{{ $aset->is_digital ? 'success' : 'secondary' }}">{{ $aset->is_digital ? 'Ya' : 'Belum' }}</span></td></tr>
                     <tr><td>Dibuat</td><td>{{ $aset->created_at->format('d/m/Y H:i') }}</td></tr>
                     <tr><td>Diubah</td><td>{{ $aset->updated_at->format('d/m/Y H:i') }}</td></tr>

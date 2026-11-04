@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aset;
+use App\Models\Desa;
 use App\Models\Kecamatan;
 use App\Models\Opd;
 use App\OpdAccess;
@@ -20,6 +21,7 @@ class LaporanController extends Controller
         $user = Auth::user();
 
         $kecamatans = Kecamatan::orderBy('nama')->get();
+        $desas = Desa::orderBy('nama')->get();
         // OPD hanya melihat laporan aset OPD-nya sendiri
         $opds = OpdAccess::limited($user)
             ? Opd::where('id', $user->opd_id)->orderBy('nama')->get()
@@ -53,7 +55,7 @@ class LaporanController extends Controller
             'luas'   => $asets->sum('luas'),
         ];
 
-        return view('admin.laporan.index', compact('kecamatans', 'opds', 'asets', 'ringkasan', 'filteredSummary'));
+        return view('admin.laporan.index', compact('kecamatans', 'desas', 'opds', 'asets', 'ringkasan', 'filteredSummary'));
     }
 
     public function exportPdf(Request $request)
@@ -67,6 +69,7 @@ class LaporanController extends Controller
 
         $filterInfo = [];
         if ($request->filled('kecamatan_id')) $filterInfo[] = 'Kecamatan: ' . Kecamatan::find($request->kecamatan_id)?->nama;
+        if ($request->filled('desa_id')) $filterInfo[] = 'Desa: ' . Desa::find($request->desa_id)?->nama;
         if ($request->filled('opd_id')) $filterInfo[] = 'OPD: ' . Opd::find($request->opd_id)?->nama;
         if ($request->filled('status')) $filterInfo[] = 'Status: ' . str_replace('_', ' ', $request->status);
         if ($request->filled('sertifikasi')) $filterInfo[] = 'Sertifikasi: ' . ($request->sertifikasi === 'ada' ? 'Sudah' : 'Belum');
@@ -95,6 +98,9 @@ class LaporanController extends Controller
     {
         if ($request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $request->kecamatan_id);
+        }
+        if ($request->filled('desa_id')) {
+            $query->where('desa_id', $request->desa_id);
         }
         // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
         if ($request->filled('opd_id') && !OpdAccess::limited($user)) {

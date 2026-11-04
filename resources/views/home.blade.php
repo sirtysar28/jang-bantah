@@ -1,25 +1,26 @@
 @extends('layouts.app')
 
 @section('content')
-    <!-- ══════════════════ NAVBAR ══════════════════ -->
-    <nav class="navbar navbar-expand-lg navbar-jb fixed-top">
+    <!-- ══════════════════ NAVBAR MODERN (putih ala satudata) ══════════════════ -->
+    <nav class="navbar navbar-expand-lg navbar-sd fixed-top">
         <div class="container">
-            <a class="navbar-brand text-white fw-bold d-flex align-items-center gap-2" href="{{ route('home') }}">
-                <img src="{{ asset('favicon.png') }}" alt="Logo" style="height:38px; border-radius:8px;">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('home') }}">
+                <img src="{{ asset('favicon.png') }}" alt="Logo" style="height:42px; border-radius:12px;">
                 <div>
-                    <div style="font-size:.9rem;line-height:1;letter-spacing:.5px;">JANG BANTAH</div>
-                    <div style="font-size:.6rem;opacity:.7;letter-spacing:1px;">JARINGAN BANK TANAH</div>
+                    <div class="brand-name">JANG BANTAH</div>
+                    <div class="brand-sub">JARINGAN BANK TANAH</div>
                 </div>
             </a>
-            <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto gap-1">
-                    <li class="nav-item"><a class="nav-link text-white active" href="{{ route('home') }}"><i class="fas fa-home me-1"></i>Beranda</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="{{ route('about') }}"><i class="fas fa-info-circle me-1"></i>Tentang</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="{{ route('map.public') }}"><i class="fas fa-map-marked-alt me-1"></i>Peta Aset</a></li>
-                    <li class="nav-item ms-lg-2">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+                    <li class="nav-item"><a class="nav-link nav-link-sd active" href="{{ route('home') }}"><i class="fas fa-home me-1"></i>Beranda</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('aset.publik') }}"><i class="fas fa-layer-group me-1"></i>Data Aset</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('about') }}"><i class="fas fa-info-circle me-1"></i>Tentang</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('map.public') }}"><i class="fas fa-map-marked-alt me-1"></i>Peta Aset</a></li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
                         <a class="btn btn-gold btn-sm px-4" href="{{ route('login') }}">
                             <i class="fas fa-sign-in-alt me-1"></i> Login Admin
                         </a>
@@ -29,15 +30,27 @@
         </div>
     </nav>
 
-    <!-- ══════════════════ HERO BACKGROUND (VIDEO / GAMBAR) ══════════════════ -->
+    <!-- ══════════════════ HERO (video/gambar + gradient biru + blob dekoratif) ══════════════════ -->
     <section id="heroVideo" class="hero-video">
-        <!-- Background dikelola Super Admin: menu Kelola Website (video YouTube atau gambar) -->
+        <!-- Background dikelola Super Admin: menu Kelola Website (video YouTube / 1 gambar statis / banyak gambar = slider) -->
         <div class="video-bg">
-            @if (\App\WebsiteContent::heroType() === 'image' && \App\WebsiteContent::heroImageUrl())
-            <img src="{{ \App\WebsiteContent::heroImageUrl() }}"
-                 alt="{{ \App\WebsiteContent::get('web_hero_title') }}"
-                 class="hero-image-bg">
-            @else
+            @php $heroImages = \App\WebsiteContent::heroType() === 'image' ? \App\WebsiteContent::heroImages() : []; @endphp
+            @if (count($heroImages) === 1)
+            {{-- 1 gambar: background statis --}}
+            <img src="{{ $heroImages[0] }}" alt="{{ \App\WebsiteContent::get('web_hero_title') }}" class="hero-image-bg">
+            @elseif (count($heroImages) > 1)
+            {{-- Lebih dari 1 gambar: slider crossfade otomatis --}}
+            <div class="hero-slider" id="heroSlider">
+                @foreach ($heroImages as $i => $url)
+                <div class="hero-slide{{ $i === 0 ? ' active' : '' }}"><img src="{{ $url }}" alt="{{ \App\WebsiteContent::get('web_hero_title') }} {{ $i + 1 }}" class="hero-image-bg"></div>
+                @endforeach
+                <div class="hero-slider-nav" id="heroSliderNav">
+                    @foreach ($heroImages as $i => $url)
+                    <button type="button" class="hero-slider-dot{{ $i === 0 ? ' active' : '' }}" data-index="{{ $i }}" aria-label="Slide {{ $i + 1 }}"></button>
+                    @endforeach
+                </div>
+            </div>
+            @elseif (\App\WebsiteContent::heroType() === 'video')
             <div class="video-bg-wrapper">
                 <iframe
                     src="{{ \App\WebsiteContent::youtubeEmbedUrl() }}"
@@ -50,12 +63,18 @@
         </div>
         <div class="slider-overlay"></div>
 
+        <!-- Dekorasi modern: glow blob + dot grid -->
+        <div class="hero-blob hero-blob-1"></div>
+        <div class="hero-blob hero-blob-2"></div>
+        <div class="hero-dots"></div>
+
         <!-- Hero Content -->
         <div class="container hero-content position-relative" style="z-index:2;">
             <div class="row align-items-center hero-row">
-                <div class="col-lg-12 text-white animate-fade-up">
-                    <span class="badge mb-3 px-3 py-2" style="font-size:.75rem; background:rgba(255,255,255,.15); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.25); color:#fff;">
-                        <i class="fas fa-landmark me-1"></i> {{ \App\WebsiteContent::get('web_hero_badge') }}
+                <div class="col-lg-8 text-white animate-fade-up">
+                    <span class="chip-glass mb-4">
+                        <i class="fas fa-landmark" style="color:var(--gold);"></i>
+                        {{ \App\WebsiteContent::get('web_hero_badge') }}
                     </span>
                     <h1 class="fw-800 mb-3 display-4" style="text-shadow: 2px 4px 20px rgba(0,20,60,.5);">
                         {{ \App\WebsiteContent::get('web_hero_title') }}
@@ -63,16 +82,34 @@
                     <p class="lead mb-2 fw-500" style="opacity:.95; text-shadow: 1px 2px 10px rgba(0,0,0,.4);">
                         {{ \App\WebsiteContent::get('web_hero_subtitle') }}
                     </p>
-                    <p style="opacity:.85; max-width:550px; font-size:.95rem; text-shadow: 1px 2px 10px rgba(0,0,0,.4); line-height:1.7;">
+                    <p style="opacity:.85; max-width:580px; font-size:.95rem; text-shadow: 1px 2px 10px rgba(0,0,0,.4); line-height:1.75;">
                         {{ \App\WebsiteContent::get('web_hero_description') }}
                     </p>
                     <div class="d-flex gap-3 mt-4 flex-wrap">
                         <a href="{{ route('about') }}" class="btn btn-gold">
                             <i class="fas fa-info-circle me-2"></i>{{ \App\WebsiteContent::get('web_hero_btn1_text') }}
                         </a>
-                        <a href="{{ route('map.public') }}" class="btn btn-outline-light" style="border-radius:50px; padding:12px 28px;">
+                        <a href="{{ route('map.public') }}" class="btn btn-glass">
                             <i class="fas fa-map me-2"></i>{{ \App\WebsiteContent::get('web_hero_btn2_text') }}
                         </a>
+                    </div>
+                </div>
+
+                <!-- Chip fitur mengambang (desktop) -->
+                <div class="col-lg-4 d-none d-lg-block">
+                    <div class="d-flex flex-column gap-3 align-items-end">
+                        <div class="chip-glass animate-float">
+                            <i class="fas fa-map-location-dot" style="color:var(--gold); font-size:1.05rem;"></i>
+                            Peta Interaktif GIS
+                        </div>
+                        <div class="chip-glass animate-float" style="animation-delay:1s; margin-right:2.5rem;">
+                            <i class="fas fa-file-shield" style="color:#7ee2a8; font-size:1.05rem;"></i>
+                            Sertifikasi Digital
+                        </div>
+                        <div class="chip-glass animate-float" style="animation-delay:2s; margin-right:.8rem;">
+                            <i class="fas fa-chart-line" style="color:#8ecbff; font-size:1.05rem;"></i>
+                            Monitoring Real-time
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,34 +117,76 @@
     </section>
 
     <!-- ══════════════════ STATS SECTION ══════════════════ -->
-    <section class="py-5" style="position:relative; z-index:3; background: linear-gradient(180deg, #f0f7ff 0%, #fff 100%);">
+    <section class="stats-section">
         <div class="container">
-            <div class="row g-4">
+            <!-- Strip statistik solid (di luar hero, background gradient biru) -->
+            <div class="stat-strip animate-fade-up">
+                <div class="row g-0 text-center text-white">
+                    <div class="col-6 col-md-3 hero-strip-item">
+                        <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3">
+                            <span class="strip-icon" style="color:#8ecbff;"><i class="fas fa-city"></i></span>
+                            <span class="text-start">
+                                <span class="fw-700 fs-5 d-block">{{ number_format($totalKecamatan) }}</span>
+                                <span class="strip-label">Kecamatan</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 hero-strip-item">
+                        <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3">
+                            <span class="strip-icon" style="color:#7ee2a8;"><i class="fas fa-home"></i></span>
+                            <span class="text-start">
+                                <span class="fw-700 fs-5 d-block">{{ number_format($totalDesa) }}</span>
+                                <span class="strip-label">Desa / Kelurahan</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 hero-strip-item">
+                        <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3">
+                            <span class="strip-icon" style="color:#ffd56a;"><i class="fas fa-vector-square"></i></span>
+                            <span class="text-start">
+                                <span class="fw-700 fs-5 d-block">{{ number_format($totalLuas / 10000, 1) }} Ha</span>
+                                <span class="strip-label">Total Luas Tanah</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 hero-strip-item">
+                        <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3">
+                            <span class="strip-icon" style="color:#ffffff;"><i class="fas fa-circle-check"></i></span>
+                            <span class="text-start">
+                                <span class="fw-700 fs-5 d-block">{{ number_format($asetDipublikasikan) }}</span>
+                                <span class="strip-label">Aset Dipublikasikan</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-4 pt-2">
                 <div class="col-lg-3 col-md-6">
-                    <div class="stat-card animate-fade-up">
-                        <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
-                        <div class="number">{{ number_format($totalAset) }}</div>
+                    <div class="card-soft stat-modern reveal h-100">
+                        <div class="icon-tile"><i class="fas fa-map-marked-alt"></i></div>
+                        <div class="number" data-count="{{ $totalAset }}">0</div>
                         <div class="label">Total Bidang Tanah</div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="stat-card animate-fade-up" style="animation-delay:.1s;">
-                        <div class="icon" style="color:var(--blue-400);"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="number">{{ 'Rp ' . number_format($totalNilai, 0, ',', '.') }}</div>
+                    <div class="card-soft stat-modern reveal h-100" style="transition-delay:.08s;">
+                        <div class="icon-tile" style="background:#e8f1ff; color:var(--blue-500);"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="number" data-count="{{ $totalNilai }}" data-prefix="Rp ">Rp 0</div>
                         <div class="label">Total Nilai Aset</div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="stat-card animate-fade-up" style="animation-delay:.2s;">
-                        <div class="icon" style="color:#27AE60;"><i class="fas fa-certificate"></i></div>
-                        <div class="number">{{ number_format($sudahSertifikat) }}</div>
+                    <div class="card-soft stat-modern reveal h-100" style="transition-delay:.16s;">
+                        <div class="icon-tile green"><i class="fas fa-certificate"></i></div>
+                        <div class="number" data-count="{{ $sudahSertifikat }}">0</div>
                         <div class="label">Sudah Bersertifikat</div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="stat-card animate-fade-up" style="animation-delay:.3s;">
-                        <div class="icon" style="color:var(--gold);"><i class="fas fa-building"></i></div>
-                        <div class="number">{{ number_format($totalOpd) }}</div>
+                    <div class="card-soft stat-modern reveal h-100" style="transition-delay:.24s;">
+                        <div class="icon-tile gold"><i class="fas fa-building"></i></div>
+                        <div class="number" data-count="{{ $totalOpd }}">0</div>
                         <div class="label">OPD Terdaftar</div>
                     </div>
                 </div>
@@ -115,40 +194,67 @@
         </div>
     </section>
 
-    <!-- ══════════════════ FITUR SECTION ══════════════════ -->
-    <section class="py-5">
+    <!-- ══════════════════ GALERI KEGIATAN ══════════════════ -->
+    @php $galeriPhotos = \App\WebsiteContent::galeriPhotos(); @endphp
+    @if (count($galeriPhotos) > 0)
+    <section class="py-5 py-lg-6 galeri-section" id="galeriKegiatan">
         <div class="container">
-            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_fitur_title') }}</h2>
-            <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                {{ \App\WebsiteContent::get('web_fitur_desc') }}
-            </p>
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Dokumentasi</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_galeri_title') }}</h2>
+                <p class="section-desc">{{ \App\WebsiteContent::get('web_galeri_desc') }}</p>
+            </div>
+            <div class="row g-3 g-md-4">
+                @foreach ($galeriPhotos as $i => $url)
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="{{ $url }}" class="galeri-item reveal" data-galeri-index="{{ $i }}" style="transition-delay: {{ min($i, 8) * 0.05 }}s;">
+                        <img src="{{ $url }}" alt="Foto kegiatan {{ $i + 1 }}" loading="lazy">
+                        <span class="galeri-zoom"><i class="fas fa-expand"></i></span>
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
+    <!-- ══════════════════ FITUR SECTION ══════════════════ -->
+    <section class="py-5 py-lg-6 bg-white">
+        <div class="container">
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Fitur Utama</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_fitur_title') }}</h2>
+                <p class="section-desc">
+                    {{ \App\WebsiteContent::get('web_fitur_desc') }}
+                </p>
+            </div>
             <div class="row g-4">
                 <div class="col-lg-3 col-md-6">
-                    <div class="feature-card">
-                        <div class="icon-box"><i class="fas fa-database"></i></div>
+                    <div class="card-soft feature-modern reveal h-100">
+                        <div class="icon-tile mb-3"><i class="fas fa-database"></i></div>
                         <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur1_title') }}</h6>
-                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur1_desc') }}</p>
+                        <p class="mb-0">{{ \App\WebsiteContent::get('web_fitur1_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="feature-card">
-                        <div class="icon-box" style="background:linear-gradient(135deg,#27AE60,#2ECC71);"><i class="fas fa-certificate"></i></div>
+                    <div class="card-soft feature-modern reveal h-100" style="transition-delay:.08s;">
+                        <div class="icon-tile green mb-3"><i class="fas fa-certificate"></i></div>
                         <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur2_title') }}</h6>
-                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur2_desc') }}</p>
+                        <p class="mb-0">{{ \App\WebsiteContent::get('web_fitur2_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="feature-card">
-                        <div class="icon-box" style="background:linear-gradient(135deg,#004d99,#1a75d1);"><i class="fas fa-shield-halved"></i></div>
+                    <div class="card-soft feature-modern reveal h-100" style="transition-delay:.16s;">
+                        <div class="icon-tile mb-3" style="background:#dbeafe;"><i class="fas fa-shield-halved"></i></div>
                         <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur3_title') }}</h6>
-                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur3_desc') }}</p>
+                        <p class="mb-0">{{ \App\WebsiteContent::get('web_fitur3_desc') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="feature-card">
-                        <div class="icon-box" style="background:linear-gradient(135deg,#f0c040,#d4a020);"><i class="fas fa-globe"></i></div>
+                    <div class="card-soft feature-modern reveal h-100" style="transition-delay:.24s;">
+                        <div class="icon-tile gold mb-3"><i class="fas fa-globe"></i></div>
                         <h6 class="fw-600 mb-2">{{ \App\WebsiteContent::get('web_fitur4_title') }}</h6>
-                        <p style="font-size:.85rem;color:#666;">{{ \App\WebsiteContent::get('web_fitur4_desc') }}</p>
+                        <p class="mb-0">{{ \App\WebsiteContent::get('web_fitur4_desc') }}</p>
                     </div>
                 </div>
             </div>
@@ -157,72 +263,104 @@
 
     <!-- ══════════════════ DATA ASET TERBARU ══════════════════ -->
     @if($asets->count() > 0)
-    <section class="py-5" style="background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%);">
+    <section class="py-5 py-lg-6 aset-section">
         <div class="container">
-            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_aset_title') }}</h2>
-            <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                {{ \App\WebsiteContent::get('web_aset_desc') }}
-            </p>
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Data Terbaru</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_aset_title') }}</h2>
+                <p class="section-desc">
+                    {{ \App\WebsiteContent::get('web_aset_desc') }}
+                </p>
+            </div>
             <div class="row g-4">
                 @foreach($asets as $aset)
                 <div class="col-lg-4 col-md-6">
-                    <div class="aset-card">
-                        @if($aset->foto_lokasi)
-                        <img src="{{ Storage::url($aset->foto_lokasi) }}" alt="{{ $aset->nama_aset }}">
-                        @else
-                        <div class="d-flex align-items-center justify-content-center" style="height:200px; background:linear-gradient(135deg, var(--blue-100), var(--blue-200));">
-                            <i class="fas fa-map-marked-alt" style="font-size:4rem; color:var(--blue-400); opacity:.5;"></i>
-                        </div>
-                        @endif
-                        <div class="p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="fw-600 mb-0" style="color:var(--blue-800);">{{ $aset->nama_aset }}</h6>
-                                <span class="badge bg-{{ $aset->status === 'aktif' ? 'success' : 'warning' }}">
-                                    {{ strtoupper(str_replace('_', ' ', $aset->status)) }}
-                                </span>
+                    <div class="card-soft aset-modern reveal h-100">
+                        <div class="aset-thumb">
+                            @if($aset->foto_lokasi)
+                            <img src="{{ Storage::url($aset->foto_lokasi) }}" alt="{{ $aset->nama_aset }}">
+                            @else
+                            <div class="aset-thumb-placeholder">
+                                <i class="fas fa-map-marked-alt"></i>
                             </div>
-                            <div style="font-size:.8rem;color:#666;">
-                                <p class="mb-1"><i class="fas fa-map-marker-alt me-1" style="color:var(--blue-500);"></i> {{ $aset->kecamatan?->nama ?? '-' }}, {{ $aset->desa?->nama ?? '-' }}</p>
-                                <p class="mb-1"><i class="fas fa-building me-1" style="color:var(--blue-500);"></i> {{ $aset->opd?->nama ?? '-' }}</p>
-                                <p class="mb-1"><i class="fas fa-ruler-combined me-1" style="color:var(--blue-500);"></i> {{ number_format($aset->luas, 2) }} m²</p>
-                                <p class="mb-0"><i class="fas fa-money-bill me-1" style="color:var(--blue-500);"></i> Rp {{ number_format($aset->nilai_aset, 0, ',', '.') }}</p>
+                            @endif
+                            <span class="pill aset-status {{ $aset->status === 'aktif' ? 'status-aktif' : 'status-warna' }}">
+                                {{ strtoupper(str_replace('_', ' ', $aset->status)) }}
+                            </span>
+                        </div>
+                        <div class="aset-body">
+                            <h6 class="fw-600 mb-3 aset-title">{{ $aset->nama_aset }}</h6>
+                            <div class="aset-meta">
+                                <span><i class="fas fa-map-marker-alt"></i> {{ $aset->kecamatan?->nama ?? '-' }}, {{ $aset->desa?->nama ?? '-' }}</span>
+                                <span><i class="fas fa-building"></i> {{ $aset->opd?->nama ?? '-' }}</span>
+                                <span><i class="fas fa-ruler-combined"></i> {{ number_format($aset->luas, 2) }} m²</span>
+                                <span><i class="fas fa-money-bill"></i> Rp {{ number_format($aset->nilai_aset, 0, ',', '.') }}</span>
                             </div>
                             @if($aset->sertifikasi && in_array($aset->sertifikasi->status, ['terbit_sertifikat', 'selesai']))
-                            <span class="badge mt-2" style="background:var(--blue-700);"><i class="fas fa-check-circle me-1"></i>Bersertifikat</span>
+                            <span class="pill mt-3" style="background:var(--blue-100); color:var(--blue-700);">
+                                <i class="fas fa-check-circle"></i> Bersertifikat
+                            </span>
                             @endif
                         </div>
                     </div>
                 </div>
                 @endforeach
             </div>
+
+            {{-- Tombol menuju halaman kumpulan seluruh aset terpublikasi --}}
+            <div class="text-center mt-4 reveal">
+                <a href="{{ route('aset.publik') }}" class="btn btn-gold px-4">
+                    <i class="fas fa-layer-group me-2"></i>Aset Lainnya
+                    @if ($totalAset > $asets->count())
+                    <span class="badge bg-light text-dark ms-1">{{ number_format($asetDipublikasikan) }} data</span>
+                    @endif
+                </a>
+            </div>
         </div>
     </section>
     @endif
 
     <!-- ══════════════════ WORKFLOW SECTION ══════════════════ -->
-    <section class="py-5">
+    <section class="py-5 py-lg-6 bg-white">
         <div class="container">
-            <h2 class="text-center section-title mb-2">{{ \App\WebsiteContent::get('web_alur_title') }}</h2>
-            <p class="text-center mb-5" style="color:#666; max-width:600px; margin-left:auto; margin-right:auto; font-size:.95rem;">
-                {{ \App\WebsiteContent::get('web_alur_desc') }}
-            </p>
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Alur Kerja</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_alur_title') }}</h2>
+                <p class="section-desc">
+                    {{ \App\WebsiteContent::get('web_alur_desc') }}
+                </p>
+            </div>
             <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="d-flex flex-wrap justify-content-center gap-2 align-items-center">
+                <div class="col-lg-11">
+                    <div class="workflow-wrap reveal">
                         @php $steps = \App\WebsiteContent::lines('web_alur_steps'); @endphp
                         @foreach($steps as $i => $step)
-                        <div class="text-center" style="min-width:100px;">
-                            <div class="d-flex align-items-center justify-content-center mx-auto mb-2 workflow-step">
-                                {{ $i + 1 }}
-                            </div>
-                            <div style="font-size:.7rem;font-weight:500;color:var(--blue-800);">{{ $step }}</div>
+                        <div class="workflow-item">
+                            <div class="workflow-step">{{ $i + 1 }}</div>
+                            <div class="workflow-label">{{ $step }}</div>
                         </div>
                         @if($i < count($steps) - 1)
-                        <i class="fas fa-chevron-right" style="font-size:.7rem;margin-top:-15px;color:var(--blue-400);"></i>
+                        <div class="workflow-connector"><i class="fas fa-chevron-right"></i></div>
                         @endif
                         @endforeach
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════ CTA BANNER ══════════════════ -->
+    <section class="pb-5">
+        <div class="container reveal">
+            <div class="cta-banner text-center text-white p-5">
+                <h3 class="fw-700 mb-2">Jelajahi Sebaran Aset Tanah</h3>
+                <p class="mb-4 mx-auto" style="opacity:.85; max-width:520px; font-size:.95rem;">
+                    Lihat langsung lokasi bidang tanah milik Pemerintah Kabupaten Halmahera Barat
+                    melalui peta interaktif kami.
+                </p>
+                <a href="{{ route('map.public') }}" class="btn btn-gold">
+                    <i class="fas fa-map-marked-alt me-2"></i>Buka Peta Aset
+                </a>
             </div>
         </div>
     </section>
@@ -240,18 +378,14 @@
                         </div>
                     </div>
                     <p style="font-size:.85rem; line-height:1.7;">
-                        {{ nl2br(e(\App\WebsiteContent::get('web_footer_desc'))) }}
+                        {!! nl2br(e(\App\WebsiteContent::get('web_footer_desc'))) !!}
                     </p>
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="{{ \App\WebsiteContent::get('web_social_facebook') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
-                            <i class="fab fa-facebook-f"></i>
+                    <div class="d-flex flex-wrap gap-3 mt-3">
+                        @foreach (\App\WebsiteContent::socialLinks() as $link)
+                        <a href="{{ $link['url'] }}" class="text-white footer-social" target="_blank" rel="noopener" title="{{ $link['url'] }}">
+                            <i class="{{ $link['icon'] }}"></i>
                         </a>
-                        <a href="{{ \App\WebsiteContent::get('web_social_instagram') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="{{ \App\WebsiteContent::get('web_social_youtube') }}" class="text-white" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:all .3s;">
-                            <i class="fab fa-youtube"></i>
-                        </a>
+                        @endforeach
                     </div>
                 </div>
                 <div class="col-lg-4 mb-4">
@@ -266,7 +400,7 @@
                     <h5><i class="fas fa-headset me-2"></i>Kontak</h5>
                     <div style="font-size:.85rem; line-height:1.9;">
                         <p class="mb-1 fw-600 text-white">{{ \App\WebsiteContent::get('web_footer_instansi') }}</p>
-                        <p class="mb-0"><i class="fas fa-map-marker-alt me-2" style="color:var(--blue-400);"></i>{{ nl2br(e(\App\WebsiteContent::get('web_footer_address'))) }}</p>
+                        <p class="mb-0"><i class="fas fa-map-marker-alt me-2" style="color:var(--blue-400);"></i>{!! nl2br(e(\App\WebsiteContent::get('web_footer_address'))) !!}</p>
                         <p class="mb-0 mt-2"><i class="fas fa-globe me-2" style="color:var(--blue-400);"></i><a href="{{ \App\WebsiteContent::get('web_footer_website') }}" class="text-white text-decoration-none" target="_blank" rel="noopener">{{ \App\WebsiteContent::get('web_footer_website') }}</a></p>
                     </div>
                 </div>
@@ -277,16 +411,32 @@
             </div>
         </div>
     </footer>
+
+    <!-- Tombol kembali ke atas -->
+    {{-- Lightbox galeri kegiatan --}}
+    <div class="galeri-lightbox" id="galeriLightbox" aria-hidden="true">
+        <button class="galeri-lightbox-close" id="galeriLbClose" aria-label="Tutup"><i class="fas fa-times"></i></button>
+        <button class="galeri-lightbox-prev" id="galeriLbPrev" aria-label="Sebelumnya"><i class="fas fa-chevron-left"></i></button>
+        <img src="" alt="Foto kegiatan" id="galeriLbImg">
+        <button class="galeri-lightbox-next" id="galeriLbNext" aria-label="Berikutnya"><i class="fas fa-chevron-right"></i></button>
+        <div class="galeri-lightbox-counter" id="galeriLbCounter"></div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" aria-label="Kembali ke atas">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 @endsection
 
 @push('styles')
 <style>
-    /* ════════ HERO VIDEO BACKGROUND ════════ */
+    /* ════════ HERO BACKGROUND ════════ */
     .hero-video {
         position: relative;
         min-height: 100vh;
         overflow: hidden;
         background: linear-gradient(135deg, #002a5c 0%, #004d99 50%, #0062b8 100%);
+        display: flex;
+        align-items: center;
     }
     .video-bg {
         position: absolute;
@@ -321,100 +471,432 @@
         object-fit: cover;
         object-position: center;
     }
+    /* ── Slider hero (multi-gambar, crossfade otomatis) ── */
+    .hero-slider {
+        position: absolute;
+        inset: 0;
+    }
+    .hero-slide {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transform: scale(1.05);
+        transition: opacity 1.4s ease, transform 6s ease;
+    }
+    .hero-slide.active {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .hero-slider-nav {
+        position: absolute;
+        bottom: 26px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 3;
+    }
+    .hero-slider-dot {
+        width: 11px; height: 11px;
+        border-radius: 999px;
+        border: 2px solid rgba(255,255,255,.85);
+        background: rgba(255,255,255,.35);
+        padding: 0;
+        cursor: pointer;
+        transition: all .3s ease;
+    }
+    .hero-slider-dot:hover {
+        background: rgba(255,255,255,.7);
+    }
+    .hero-slider-dot.active {
+        background: #fff;
+        width: 30px;
+    }
     .slider-overlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        /* Overlay tipis menyamping: gelap di kiri (baca teks), transparan di kanan (video terlihat) */
+        /* Overlay: gelap di kiri (teks terbaca), transparan di kanan (video terlihat) */
         background: linear-gradient(
             90deg,
-            rgba(0,42,92,.78) 0%,
-            rgba(0,42,92,.55) 25%,
-            rgba(0,77,153,.30) 50%,
-            rgba(0,98,184,.15) 75%,
+            rgba(0,42,92,.85) 0%,
+            rgba(0,42,92,.62) 30%,
+            rgba(0,77,153,.34) 55%,
+            rgba(0,98,184,.14) 75%,
             rgba(0,98,184,.10) 100%
         );
         z-index: 1;
     }
-    /* Layer tambahan: gelap halus di atas & bawah agar navbar + transisi wave tetap mulus */
+    /* Layer tambahan gelap halus atas-bawah */
     .slider-overlay::after {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
         background: linear-gradient(
             180deg,
-            rgba(0,20,50,.35) 0%,
-            rgba(0,0,0,0) 18%,
-            rgba(0,0,0,0) 75%,
-            rgba(0,20,50,.45) 100%
+            rgba(0,20,50,.38) 0%,
+            rgba(0,0,0,0) 16%,
+            rgba(0,0,0,0) 68%,
+            rgba(0,20,50,.5) 100%
         );
     }
-    /* Bottom wave */
-    .hero-video::after {
-        content: '';
+
+    /* ════════ DEKORASI HERO (blob glow + dot grid) ════════ */
+    .hero-blob {
         position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 100px;
-        background: var(--blue-50);
-        clip-path: ellipse(55% 100% at 50% 100%);
+        border-radius: 50%;
+        filter: blur(70px);
+        z-index: 1;
+        pointer-events: none;
+    }
+    .hero-blob-1 {
+        width: 420px; height: 420px;
+        top: -120px; right: -100px;
+        background: radial-gradient(circle, rgba(77,163,232,.5), transparent 65%);
+        animation: blobFloat 9s ease-in-out infinite;
+    }
+    .hero-blob-2 {
+        width: 360px; height: 360px;
+        bottom: -80px; left: -120px;
+        background: radial-gradient(circle, rgba(240,192,64,.28), transparent 65%);
+        animation: blobFloat 11s ease-in-out infinite reverse;
+    }
+    @keyframes blobFloat {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%      { transform: translate(24px, -28px) scale(1.08); }
+    }
+    .hero-dots {
+        position: absolute;
+        top: 110px; right: 60px;
+        width: 220px; height: 140px;
+        background-image: radial-gradient(rgba(255,255,255,.35) 1.5px, transparent 1.5px);
+        background-size: 20px 20px;
+        z-index: 1;
+        pointer-events: none;
+        mask-image: linear-gradient(200deg, rgba(0,0,0,.9), transparent 75%);
+        -webkit-mask-image: linear-gradient(200deg, rgba(0,0,0,.9), transparent 75%);
+    }
+    @keyframes floatChip {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-12px); }
+    }
+    .animate-float { animation: floatChip 5s ease-in-out infinite; }
+
+    /* ════════ STRIP STATISTIK SOLID (di luar hero) ════════ */
+    .stat-strip {
+        background: linear-gradient(120deg, var(--blue-900) 0%, var(--blue-700) 55%, var(--blue-600) 100%);
+        border-radius: 24px;
+        box-shadow: 0 20px 46px rgba(2,20,51,.28);
+        padding: 1.6rem 1rem;
+        margin-top: 2.5rem;             /* jarak dari hero, tidak nempel */
+        position: relative;
         z-index: 5;
     }
+    .hero-strip-item { padding: .5rem .4rem; position: relative; }
+    .hero-strip-item .strip-label {
+        font-size: .72rem;
+        opacity: .8;
+        letter-spacing: .4px;
+        line-height: 1.3;
+        display: block;
+    }
+    .strip-icon {
+        width: 48px; height: 48px;
+        border-radius: 14px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,.14);
+        color: var(--gold);
+        font-size: 1.1rem;
+        flex: 0 0 auto;
+    }
+    .hero-strip-item + .hero-strip-item::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 20%;
+        height: 60%; width: 1px;
+        background: rgba(255,255,255,.18);
+    }
+    @media (max-width: 767px) {
+        .stat-strip { margin-top: 1.6rem; border-radius: 20px; }
+        .hero-strip-item + .hero-strip-item::before { display: none; }
+        .hero-strip-item { border-top: 1px solid rgba(255,255,255,.14); }
+        .hero-strip-item:nth-child(-n+2) { border-top: none; }
+        .hero-strip-item .fw-700 { font-size: 1.05rem !important; }
+    }
 
-    /* ════════ WORKFLOW STEP ════════ */
+    /* ════════ STATS SECTION ════════ */
+    .stats-section {
+        position: relative;
+        z-index: 3;
+        background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%);
+        padding: 0 0 3.2rem;
+    }
+    @media (min-width: 768px) {
+        .stat-strip { margin-top: 3rem; }
+    }
+    .stat-modern {
+        padding: 30px 24px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-modern::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(90deg, var(--blue-500), var(--blue-700));
+        opacity: 0;
+        transition: opacity .35s ease;
+    }
+    .stat-modern:hover::before { opacity: 1; }
+    .stat-modern .number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--blue-900);
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+    }
+    .stat-modern .label { font-size: .84rem; color: #64748b; font-weight: 500; }
+
+    /* ════════ SECTION DESC ════════ */
+    .section-desc {
+        color: #64748b;
+        max-width: 620px;
+        margin: 0 auto;
+        font-size: .95rem;
+        line-height: 1.7;
+    }
+
+    /* ════════ GALERI KEGIATAN ══════════ */
+    .galeri-section { background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%); }
+    .galeri-item {
+        position: relative;
+        display: block;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0,42,92,.08);
+        aspect-ratio: 4 / 3;
+    }
+    .galeri-item img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform .55s ease;
+    }
+    .galeri-item:hover img { transform: scale(1.08); }
+    .galeri-zoom {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,42,92,0);
+        color: transparent;
+        font-size: 1.4rem;
+        transition: all .3s ease;
+    }
+    .galeri-item:hover .galeri-zoom {
+        background: rgba(0,42,92,.45);
+        color: #fff;
+    }
+
+    /* ── Lightbox galeri ── */
+    .galeri-lightbox {
+        position: fixed; inset: 0;
+        background: rgba(2,12,27,.92);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 2000;
+        padding: 24px;
+    }
+    .galeri-lightbox.open { display: flex; }
+    .galeri-lightbox img {
+        max-width: min(1100px, 92vw);
+        max-height: 82vh;
+        border-radius: 12px;
+        box-shadow: 0 24px 80px rgba(0,0,0,.6);
+    }
+    .galeri-lightbox-close,
+    .galeri-lightbox-prev,
+    .galeri-lightbox-next {
+        position: absolute;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.25);
+        color: #fff;
+        width: 46px; height: 46px;
+        border-radius: 999px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background .25s ease;
+        font-size: 1.05rem;
+    }
+    .galeri-lightbox-close:hover,
+    .galeri-lightbox-prev:hover,
+    .galeri-lightbox-next:hover { background: rgba(255,255,255,.3); }
+    .galeri-lightbox-close { top: 22px; right: 22px; }
+    .galeri-lightbox-prev  { left: 22px; top: 50%; transform: translateY(-50%); }
+    .galeri-lightbox-next  { right: 22px; top: 50%; transform: translateY(-50%); }
+    .galeri-lightbox-counter {
+        position: absolute;
+        bottom: 22px; left: 50%; transform: translateX(-50%);
+        color: rgba(255,255,255,.8);
+        font-size: .85rem;
+        letter-spacing: 1px;
+    }
+    @media (max-width: 576px) {
+        .galeri-lightbox-prev { left: 10px; }
+        .galeri-lightbox-next { right: 10px; }
+    }
+
+    /* ════════ FITUR CARD ════════ */
+    .feature-modern { padding: 34px 26px; }
+    .feature-modern h6 { color: var(--blue-900); font-size: 1rem; }
+    .feature-modern p { font-size: .85rem; color: #64748b; line-height: 1.7; }
+
+    /* ════════ ASET CARD ════════ */
+    .aset-section { background: linear-gradient(180deg, #fff 0%, var(--blue-50) 45%, var(--blue-50) 100%); }
+    .aset-modern { overflow: hidden; display: flex; flex-direction: column; }
+    .aset-thumb { position: relative; overflow: hidden; }
+    .aset-thumb img {
+        width: 100%; height: 210px;
+        object-fit: cover;
+        transition: transform .55s ease;
+        display: block;
+    }
+    .aset-modern:hover .aset-thumb img { transform: scale(1.08); }
+    .aset-thumb-placeholder {
+        height: 210px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--blue-100), var(--blue-200));
+    }
+    .aset-thumb-placeholder i { font-size: 3.4rem; color: var(--blue-400); opacity: .55; }
+    .aset-status {
+        position: absolute;
+        top: 14px; left: 14px;
+        backdrop-filter: blur(6px);
+    }
+    .status-aktif   { background: rgba(39,174,96,.92); color: #fff; }
+    .status-warna   { background: rgba(240,192,64,.94); color: #4a3505; }
+    .aset-body { padding: 22px 24px 26px; display: flex; flex-direction: column; flex: 1; }
+    .aset-title { color: var(--blue-800); font-size: .98rem; }
+    .aset-meta { display: flex; flex-direction: column; gap: .45rem; font-size: .8rem; color: #64748b; }
+    .aset-meta i { color: var(--blue-500); width: 16px; }
+
+    /* ════════ WORKFLOW ════════ */
+    .workflow-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 14px 10px;
+        background: var(--blue-50);
+        border: 1px dashed rgba(0,98,184,.3);
+        border-radius: 26px;
+        padding: 38px 24px;
+    }
+    .workflow-item { text-align: center; width: 108px; }
     .workflow-step {
-        width: 50px; height: 50px;
-        border-radius: 50%;
+        width: 54px; height: 54px;
+        border-radius: 18px;
         background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
         color: #fff;
-        font-size: .75rem;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0,77,153,.25);
-        transition: all .3s;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.05rem; font-weight: 700;
+        margin: 0 auto 10px;
+        box-shadow: 0 10px 24px rgba(0,77,153,.3);
+        transition: all .3s ease;
+        position: relative;
     }
-    .workflow-step:hover {
-        transform: scale(1.15);
-        box-shadow: 0 6px 20px rgba(0,77,153,.4);
+    .workflow-step::after {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 22px;
+        border: 2px solid rgba(0,98,184,.18);
+        transition: all .3s ease;
+    }
+    .workflow-item:hover .workflow-step {
+        transform: translateY(-5px) scale(1.06);
+        box-shadow: 0 14px 30px rgba(0,77,153,.4);
+    }
+    .workflow-item:hover .workflow-step::after { inset: -8px; border-color: rgba(0,98,184,.35); }
+    .workflow-label { font-size: .7rem; font-weight: 600; color: var(--blue-800); line-height: 1.5; }
+    .workflow-connector {
+        align-self: center;
+        margin-top: -26px;
+        color: var(--blue-400);
+        font-size: .8rem;
     }
 
-    /* ════════ SCROLL REVEAL ════════ */
-    .reveal {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: opacity .6s ease, transform .6s ease;
+    /* ════════ CTA BANNER ════════ */
+    .cta-banner {
+        border-radius: 28px;
+        background: linear-gradient(120deg, var(--blue-900) 0%, var(--blue-700) 55%, var(--blue-600) 100%);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 48px rgba(2,20,51,.22);
     }
-    .reveal.active {
-        opacity: 1;
-        transform: translateY(0);
+    .cta-banner::before {
+        content: '';
+        position: absolute;
+        top: -90px; right: -70px;
+        width: 280px; height: 280px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(77,163,232,.35), transparent 65%);
+        filter: blur(10px);
+    }
+    .cta-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -110px; left: -80px;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(240,192,64,.22), transparent 65%);
+        filter: blur(10px);
+    }
+    .cta-banner > * { position: relative; z-index: 1; }
+
+    /* ════════ SPACING HELPER ════════ */
+    .py-lg-6 { padding-top: 4.5rem !important; padding-bottom: 4.5rem !important; }
+    @media (min-width: 992px) {
+        .py-lg-6 { padding-top: 5.2rem !important; padding-bottom: 5.2rem !important; }
+    }
+
+    /* ════════ FOOTER SOCIAL ════════ */
+    .footer-social {
+        width: 38px; height: 38px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.1);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .85rem;
+        transition: all .3s ease;
+    }
+    .footer-social:hover {
+        background: var(--blue-500);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,.25);
     }
 
     /* ════════ MOBILE RESPONSIVE ════════ */
-    /* Default (desktop): row setinggi viewport, konten di tengah */
-    .hero-row { min-height: 100vh; }
+    .hero-row { min-height: calc(100vh - 140px); }
 
     @media (max-width: 991px) {
-        /* Mobile: konten mengalir dari atas, section boleh memanjang agar tidak terpotong */
-        .hero-row {
-            min-height: auto;
-            align-items: flex-start !important;
-        }
-        .hero-content {
-            padding-top: 90px;     /* clearance untuk navbar fixed */
-            padding-bottom: 70px;
-        }
-        /* Overlay mobile: vertikal — gelap di atas (navbar) & bawah (wave),
-           lebih tipis di tengah agar video background tetap terlihat jelas */
+        .hero-video { min-height: auto; }
+        .hero-row { min-height: auto; align-items: flex-start !important; }
+        .hero-content { padding-top: 100px; padding-bottom: 56px; }
         .slider-overlay {
             background: linear-gradient(
                 180deg,
-                rgba(0,42,92,.72) 0%,
-                rgba(0,42,92,.42) 28%,
-                rgba(0,42,92,.42) 72%,
-                rgba(0,42,92,.68) 100%
+                rgba(0,42,92,.78) 0%,
+                rgba(0,42,92,.45) 28%,
+                rgba(0,42,92,.45) 72%,
+                rgba(0,42,92,.72) 100%
             );
         }
         .slider-overlay::after { display: none; }
-        /* Perkuat text-shadow di mobile agar teks tetap terbaca di atas video */
+        .hero-dots { display: none; }
         .hero-content h1,
         .hero-content .lead,
         .hero-content p {
@@ -423,11 +905,14 @@
     }
 
     @media (max-width: 575px) {
-        .hero-content { padding-top: 80px; padding-bottom: 60px; }
-        .hero-content h1 { font-size: 2rem; line-height: 1.15; }
+        .hero-content { padding-top: 92px; padding-bottom: 48px; }
+        .hero-content h1 { font-size: 2rem; line-height: 1.18; }
         .hero-content .lead { font-size: 1rem; }
         .hero-content p { font-size: .88rem; }
         .hero-content .btn { padding: 9px 18px !important; font-size: .82rem !important; }
+        .workflow-item { width: 42%; }
+        .workflow-connector { display: none; }
+        .stat-modern .number { font-size: 1.4rem; }
     }
 
     @media (max-width: 360px) {
@@ -439,32 +924,138 @@
 
 @push('scripts')
 <script>
-    /* ── Video Background (YouTube) ── */
-    /* Video di-mute & autoplay via parameter URL iframe, tidak perlu JS tambahan. */
-
     /* ── Scroll Reveal ── */
     function revealOnScroll() {
-        const reveals = document.querySelectorAll('.reveal');
-        reveals.forEach(el => {
-            const top = el.getBoundingClientRect().top;
-            if (top < window.innerHeight - 80) {
+        document.querySelectorAll('.reveal').forEach(el => {
+            if (el.getBoundingClientRect().top < window.innerHeight - 60) {
                 el.classList.add('active');
             }
         });
     }
-    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('scroll', revealOnScroll, { passive: true });
     window.addEventListener('load', revealOnScroll);
 
-    /* ── Navbar scroll effect ── */
+    /* ── Navbar: shadow saat scroll ── */
+    const navSd = document.querySelector('.navbar-sd');
     window.addEventListener('scroll', () => {
-        const nav = document.querySelector('.navbar-jb');
-        if (window.scrollY > 60) {
-            nav.style.background = 'linear-gradient(135deg, rgba(0,42,92,.97), rgba(0,77,153,.97))';
-            nav.style.padding = '.5rem 0';
-        } else {
-            nav.style.background = 'linear-gradient(135deg, #002a5c, #004d99, #0062b8)';
-            nav.style.padding = '.7rem 0';
+        if (navSd) navSd.classList.toggle('scrolled', window.scrollY > 24);
+    }, { passive: true });
+
+    /* ── Count-up angka statistik ── */
+    function animateCount(el) {
+        const target   = parseInt(el.dataset.count, 10) || 0;
+        const prefix   = el.dataset.prefix || '';
+        const duration = 1600;
+        const start    = performance.now();
+        const fmt      = new Intl.NumberFormat('id-ID');
+        function tick(now) {
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3); /* ease-out cubic */
+            el.textContent = prefix + fmt.format(Math.round(target * eased));
+            if (p < 1) requestAnimationFrame(tick);
         }
+        requestAnimationFrame(tick);
+    }
+    const countObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCount(entry.target);
+                countObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: .4 });
+    document.querySelectorAll('[data-count]').forEach(el => countObserver.observe(el));
+
+    /* ── Tombol kembali ke atas ── */
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        backToTop && backToTop.classList.toggle('show', window.scrollY > 480);
+    }, { passive: true });
+    backToTop && backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+    /* ── Lightbox galeri kegiatan ── */
+    (function galeriLightbox() {
+        const lb    = document.getElementById('galeriLightbox');
+        if (!lb) return;
+
+        const items = Array.from(document.querySelectorAll('.galeri-item'));
+        const img   = document.getElementById('galeriLbImg');
+        const ctr   = document.getElementById('galeriLbCounter');
+        let index   = 0;
+
+        function show(i) {
+            if (!items.length) return;
+            index = (i + items.length) % items.length;
+            img.src = items[index].getAttribute('href');
+            ctr.textContent = (index + 1) + ' / ' + items.length;
+        }
+        function open(i) { show(i); lb.classList.add('open'); lb.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }
+        function close() { lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+
+        items.forEach(item => item.addEventListener('click', e => {
+            e.preventDefault();
+            open(parseInt(item.dataset.galeriIndex, 10));
+        }));
+
+        document.getElementById('galeriLbClose').addEventListener('click', close);
+        document.getElementById('galeriLbPrev').addEventListener('click', () => show(index - 1));
+        document.getElementById('galeriLbNext').addEventListener('click', () => show(index + 1));
+        lb.addEventListener('click', e => { if (e.target === lb) close(); });
+        document.addEventListener('keydown', e => {
+            if (!lb.classList.contains('open')) return;
+            if (e.key === 'Escape') close();
+            if (e.key === 'ArrowRight') show(index + 1);
+            if (e.key === 'ArrowLeft') show(index - 1);
+        });
+    })();
+
+    /* ── Slider hero multi-gambar (crossfade + ken-burns otomatis) ── */
+    (function heroSlider() {
+        const slider = document.getElementById('heroSlider');
+        if (!slider) return;
+
+        const slides = slider.querySelectorAll('.hero-slide');
+        const dots   = slider.querySelectorAll('.hero-slider-dot');
+        if (slides.length < 2) return;
+
+        let current = 0;
+        let timer   = null;
+        const INTERVAL = 6000; /* 6 detik per slide */
+
+        function goTo(index) {
+            slides[current].classList.remove('active');
+            dots[current] && dots[current].classList.remove('active');
+            current = (index + slides.length) % slides.length;
+            slides[current].classList.add('active');
+            dots[current] && dots[current].classList.add('active');
+        }
+
+        function play()  { timer = setInterval(() => goTo(current + 1), INTERVAL); }
+        function stop()  { clearInterval(timer); }
+
+        /* Klik dot: langsung pindah slide & reset timer */
+        dots.forEach(dot => dot.addEventListener('click', () => {
+            stop();
+            goTo(parseInt(dot.dataset.index, 10));
+            play();
+        }));
+
+        /* Jeda saat kursor di atas hero agar tidak mengganggu dibaca */
+        slider.addEventListener('mouseenter', stop);
+        slider.addEventListener('mouseleave', play);
+
+        /* Geser slide via keyboard (aksesibilitas) */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight') { stop(); goTo(current + 1); play(); }
+            if (e.key === 'ArrowLeft')  { stop(); goTo(current - 1); play(); }
+        });
+
+        play();
+    })();
+
+    /* Jalankan reveal awal */
+    revealOnScroll();
 </script>
 @endpush

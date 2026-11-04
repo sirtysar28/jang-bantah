@@ -10,10 +10,19 @@
             <div class="row g-3">
                 <div class="col-md-2">
                     <label class="form-label">Kecamatan</label>
-                    <select name="kecamatan_id" class="form-select form-select-sm">
+                    <select name="kecamatan_id" id="filterKecamatan" class="form-select form-select-sm">
                         <option value="">Semua</option>
                         @foreach($kecamatans as $k)
                         <option value="{{ $k->id }}" {{ request('kecamatan_id') == $k->id ? 'selected' : '' }}>{{ $k->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Desa</label>
+                    <select name="desa_id" id="filterDesa" class="form-select form-select-sm">
+                        <option value="">Semua</option>
+                        @foreach($desas as $d)
+                        <option value="{{ $d->id }}" data-kecamatan="{{ $d->kecamatan_id }}" {{ request('desa_id') == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -60,16 +69,43 @@
                         @endfor
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Tampilkan</button>
-                    <a href="{{ route('admin.laporan.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-redo"></i></a>
-                </div>
             </div>
         </form>
         <div class="mt-2 d-flex gap-2">
+            <button type="submit" form="filterForm" class="btn btn-primary btn-sm"><i class="fas fa-search me-1"></i>Tampilkan</button>
+            <a href="{{ route('admin.laporan.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-redo me-1"></i>Reset</a>
             <a href="{{ route('admin.laporan.pdf', request()->query()) }}" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Export PDF</a>
             <a href="{{ route('admin.laporan.excel', request()->query()) }}" class="btn btn-success btn-sm"><i class="fas fa-file-excel me-1"></i>Export Excel</a>
         </div>
+
+        {{-- Filter desa mengikuti kecamatan terpilih --}}
+        @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var kec = document.getElementById('filterKecamatan');
+                var desa = document.getElementById('filterDesa');
+                if (!kec || !desa) return;
+
+                function filterDesaOptions() {
+                    var kecId = kec.value;
+                    var selected = desa.value;
+                    Array.from(desa.options).forEach(function (opt) {
+                        if (!opt.value) return;
+                        var match = !kecId || opt.dataset.kecamatan === kecId;
+                        opt.hidden = !match;
+                        opt.disabled = !match;
+                        if (selected && opt.value === selected && !match) {
+                            desa.value = '';
+                            selected = '';
+                        }
+                    });
+                }
+
+                kec.addEventListener('change', filterDesaOptions);
+                filterDesaOptions();
+            });
+        </script>
+        @endpush
     </div>
 </div>
 

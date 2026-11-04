@@ -32,9 +32,17 @@ class DashboardController
 
         // Grafik: sebaran kecamatan & OPD (hanya aset aktif)
         // Untuk OPD, sebaran dihitung dari aset milik OPD-nya sendiri
+        // Sebaran aset per kecamatan: hanya kecamatan yang MEMILIKI aset,
+        // diurutkan dari jumlah terbanyak — agar grafik tidak penuh bar
+        // kosong / tampak "menumpuk menjadi satu".
+        // (difilter di collection — kompatibel MySQL & SQLite, tanpa HAVING)
         $sebaranKecamatan = Kecamatan::withCount([
             'asets' => fn($q) => OpdAccess::limited($user) ? $q->where('opd_id', $user->opd_id) : $q,
-        ])->get();
+        ])
+            ->get()
+            ->filter(fn ($k) => $k->asets_count > 0)
+            ->sortByDesc('asets_count')
+            ->values();
         $sebaranOpd = OpdAccess::limited($user)
             ? Opd::where('id', $user->opd_id)->withCount('asets')->get()
             : Opd::withCount('asets')->take(10)->get();

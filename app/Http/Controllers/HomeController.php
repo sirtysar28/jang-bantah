@@ -13,18 +13,31 @@ class HomeController
     {
         $totalAset = Aset::count();
         $totalKecamatan = Kecamatan::count();
+        $totalDesa = \App\Models\Desa::count();
         $totalOpd = Opd::count();
         $totalNilai = Aset::sum('nilai_aset');
+        $totalLuas = (float) Aset::sum('luas');
+        $asetDipublikasikan = Aset::where('is_validated', true)->count();
         $sudahSertifikat = Aset::whereHas('sertifikasi', function ($q) {
             $q->whereIn('status', ['terbit_sertifikat', 'selesai']);
         })->count();
         $asets = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi'])
             ->where('is_validated', true)
             ->latest()
-            ->take(6)
+            ->take(3) // homepage hanya 3 terbaru — sisanya di halaman Data Aset
             ->get();
 
-        return view('home', compact('totalAset', 'totalKecamatan', 'totalOpd', 'totalNilai', 'sudahSertifikat', 'asets'));
+        return view('home', compact(
+            'totalAset',
+            'totalKecamatan',
+            'totalDesa',
+            'totalOpd',
+            'totalNilai',
+            'totalLuas',
+            'asetDipublikasikan',
+            'sudahSertifikat',
+            'asets'
+        ));
     }
 
     public function about()
@@ -32,12 +45,67 @@ class HomeController
         return view('about');
     }
 
-    public function mapPublic()
+    /**
+     * Halaman publik "Data Aset" — kumpulan seluruh aset yang sudah
+     * dipublikasikan (tervalidasi), lengkap dengan pencarian &
+     * filter kecamatan + pagination.
+     */
+    public function dataAset(Request $request)
     {
+        $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi'])
+            ->where('is_validated', true);
+
+        if ($request->filled('q')) {
+            $q = trim($request->string('q'));
+            $query->where(function ($w) use ($q) {
+                $w->where('nama_aset', 'like', "%{$q}%")
+                    ->orWhere('nomor_register', 'like', "%{$q}%")
+                    ->orWhere('alamat', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('kecamatan_id')) {
+            $query->where('kecamatan_id', $request->kecamatan_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $asets = $query->latest()->paginate(12)->withQueryString();
+
+        // Statistik ringkas untuk header halaman
+        $totalAsetPublik = Aset::where('is_validated', true)->count();
+        $totalNilaiPublik = Aset::where('is_validated', true)->sum('nilai_aset');
+        $totalLuasPublik = (float) Aset::where('is_validated', true)->sum('luas');
+        $sudahSertifikatPublik = Aset::where('is_validated', true)
+            ->whereHas('sertifikasi', fn ($s) => $s->whereIn('status', ['terbit_sertifikat', 'selesai']))
+            ->count();
+        $kecamatans = Kecamatan::orderBy('nama')->get();
+
+        return view('data-aset', compact(
+            'asets', 'kecamatans',
+            'totalAsetPublik', 'totalNilaiPublik', 'totalLuasPublik', 'sudahSertifikatPublik'
+        ));
+    }
+
+    public function mapPublic(Request $request)
+    {
+        // Parameter ?aset=NOMOR_REGISTER (dipakai QR Code identifikasi aset):
+        // peta otomatis menitik-kan bidang terkait & membuka popup-nya.
+        $focusRegister = $request->filled('aset') ? $request->string('aset')->trim() : null;
+
+        // Aset tampil di peta: semua yang tervalidasi, plus (jika ada
+        // parameter ?aset=) bidang terkait walau belum tervalidasi
         $asets = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->where('is_validated', true)
+            ->where(function ($q) use ($focusRegister) {
+                $q->where('is_validated', true);
+                if ($focusRegister) {
+                    $q->orWhere('nomor_register', $focusRegister);
+                }
+            })
             ->get();
 
         $total = $asets->count();
@@ -144,9 +212,10 @@ class HomeController
                 'lng'   => (float) $a->longitude,
                 'group' => $grp,
                 'popup' => $h,
+                'nr'    => (string) $a->nomor_register,
             ];
         }
 
-        return view('map-public', compact('mapData', 'total', 'bersertifikat', 'sengketa', 'belumSertifikasi', 'prosesSertifikasi'));
+        return view('map-public', compact('mapData', 'total', 'bersertifikat', 'sengketa', 'belumSertifikasi', 'prosesSertifikasi', 'focusRegister'));
     }
 }

@@ -25,6 +25,7 @@
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabFitur" type="button"><i class="fas fa-star me-1"></i>Fitur</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAlur" type="button"><i class="fas fa-diagram-project me-1"></i>Aset & Alur Kerja</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabFooter" type="button"><i class="fas fa-shoe-prints me-1"></i>Footer</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabGaleri" type="button"><i class="fas fa-images me-1"></i>Galeri Kegiatan</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAbout" type="button"><i class="fas fa-info-circle me-1"></i>Halaman Tentang</button></li>
     </ul>
 
@@ -75,29 +76,40 @@
                             </div>
                         </div>
 
-                        {{-- Field khusus tipe GAMBAR --}}
+                        {{-- Field khusus tipe GAMBAR (multi-upload → slider otomatis) --}}
                         <div id="heroImageFields" class="d-none">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-600">Upload Gambar Baru</label>
-                                    <input type="file" name="web_hero_image" class="form-control" accept="image/jpeg,image/png,image/webp" onchange="previewHeroImage(this)">
-                                    <small class="text-muted">Format JPG / PNG / WebP, maks 5MB. Disarankan gambar resolusi tinggi (mis. 1920×1080) karena ditampilkan layar penuh.</small>
-                                    @if (\App\WebsiteContent::heroImagePath())
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input" type="checkbox" name="hapus_gambar" value="1" id="hapusGambar">
-                                        <label class="form-check-label" for="hapusGambar" style="font-size:.85rem;">Hapus gambar (kembali ke background gradient)</label>
-                                    </div>
-                                    @endif
+                                    <label class="form-label fw-600">Upload Gambar (bisa pilih beberapa sekaligus)</label>
+                                    <input type="file" name="web_hero_image[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple onchange="previewHeroImages(this)">
+                                    <small class="text-muted">Format JPG / PNG / WebP, tiap file maks 5MB. <b>Upload lebih dari 1 gambar → otomatis menjadi slider hero</b> dengan transisi halus. Gambar baru ditambahkan setelah yang sudah ada.</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-600">Gambar Saat Ini</label>
-                                    @if (\App\WebsiteContent::heroImageUrl())
-                                    <img id="heroImagePreview" src="{{ \App\WebsiteContent::heroImageUrl() }}" alt="Gambar hero" style="width:100%;max-width:280px;border-radius:8px;border:1px solid #dee2e6;object-fit:cover;">
+                                    <label class="form-label fw-600">Gambar Saat Ini (@count($heroPaths) gambar)</label>
+                                    @if (count($heroPaths) > 0)
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        @foreach ($heroPaths as $i => $path)
+                                        <div class="text-center">
+                                            <img src="{{ asset('storage/' . $path) }}" alt="Gambar hero {{ $i + 1 }}" style="width:120px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;">
+                                            @if (count($heroPaths) > 1 && $i === 0)
+                                            <div style="font-size:.65rem;" class="text-muted mt-1">slide pertama</div>
+                                            @endif
+                                            <div class="form-check mt-1">
+                                                <input class="form-check-input" type="checkbox" name="hapus_gambar[]" value="{{ $path }}" id="hapusGambar{{ $i }}">
+                                                <label class="form-check-label text-danger" for="hapusGambar{{ $i }}" style="font-size:.75rem;">hapus</label>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    <small class="text-muted">Centang "hapus" lalu klik <b>Simpan</b> untuk menghapus gambar terpilih.</small>
                                     @else
-                                    <div id="heroImagePreview" class="border rounded-3 p-4 text-center text-muted" style="font-size:.85rem;max-width:280px;">
+                                    <div class="border rounded-3 p-4 text-center text-muted" style="font-size:.85rem;">
                                         <i class="fas fa-image d-block mb-2" style="font-size:1.5rem;"></i>Belum ada gambar — jika tipe "Gambar" dipilih tanpa gambar, background gradient biru yang digunakan.
                                     </div>
                                     @endif
+
+                                    {{-- Pratinjau file yang baru dipilih --}}
+                                    <div id="heroImagesPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -211,12 +223,81 @@
                             @endforeach
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-600">Media Sosial (URL)</label>
-                            <div class="row g-2">
-                                <div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text"><i class="fab fa-facebook-f"></i></span><input type="text" name="web_social_facebook" class="form-control" value="{{ old('web_social_facebook', $content['web_social_facebook']) }}"></div></div>
-                                <div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text"><i class="fab fa-instagram"></i></span><input type="text" name="web_social_instagram" class="form-control" value="{{ old('web_social_instagram', $content['web_social_instagram']) }}"></div></div>
-                                <div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text"><i class="fab fa-youtube"></i></span><input type="text" name="web_social_youtube" class="form-control" value="{{ old('web_social_youtube', $content['web_social_youtube']) }}"></div></div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label fw-600">Media Sosial (Icon + URL)</label>
+                                <button type="button" class="btn btn-sm btn-primary mb-1" onclick="addSocialRow()"><i class="fas fa-plus me-1"></i>Tambah</button>
                             </div>
+                            <div id="socialRows" class="d-flex flex-column gap-2 mb-1">
+                                @if (count($socialLinks) > 0)
+                                    @foreach ($socialLinks as $link)
+                                    <div class="row g-2 align-items-center social-row">
+                                        <div class="col-5">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text social-icon-preview"><i class="{{ $link['icon'] }}"></i></span>
+                                                <select name="social_icon[]" class="form-select social-icon-select">@foreach (\App\WebsiteContent::socialIconOptions() as $ico => $label)<option value="{{ $ico }}" {{ $ico === $link['icon'] ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" name="social_url[]" class="form-control form-control-sm" placeholder="https://..." value="{{ $link['url'] }}">
+                                        </div>
+                                        <div class="col-1">
+                                            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeSocialRow(this)" title="Hapus baris"><i class="fas fa-times"></i></button>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                @else
+                                    <div class="text-muted" style="font-size:.85rem;" id="socialEmptyInfo">Belum ada media sosial. Klik <b>Tambah</b> untuk membuat baru.</div>
+                                @endif
+                            </div>
+                            <small class="text-muted">Jumlah media sosial tidak dibatasi — pilih icon lalu isi URL (contoh: https://instagram.com/halbarkab). Icon bisa dipilih berbeda-beda untuk tiap baris.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ══════════ TAB: GALERI KEGIATAN ══════════ --}}
+        <div class="tab-pane fade" id="tabGaleri">
+            <div class="card mb-3">
+                <div class="card-header"><i class="fas fa-heading me-2"></i>Judul Section Galeri</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label fw-600">Judul</label><input type="text" name="web_galeri_title" class="form-control" value="{{ old('web_galeri_title', $content['web_galeri_title']) }}"></div>
+                        <div class="col-md-8"><label class="form-label fw-600">Deskripsi</label><input type="text" name="web_galeri_desc" class="form-control" value="{{ old('web_galeri_desc', $content['web_galeri_desc']) }}"></div>
+                    </div>
+                    <small class="text-muted d-block mt-1">Section ini tampil di halaman depan, tepat di bawah strip statistik. <b>Kosong/0 foto = section otomatis disembunyikan.</b></small>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><i class="fas fa-images me-2"></i>Foto Kegiatan (@count($galeriPaths) foto)</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-600">Upload Foto (bisa pilih beberapa sekaligus)</label>
+                            <input type="file" name="galeri_foto[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple onchange="previewGaleri(this)">
+                            <small class="text-muted">Format JPG / PNG / WebP, tiap file maks 5MB. Jumlah tidak dibatasi — foto baru ditambahkan setelah yang sudah ada.</small>
+                            <div id="galeriPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-600">Foto Saat Ini (@count($galeriPaths) foto)</label>
+                            @if (count($galeriPaths) > 0)
+                            <div class="d-flex flex-wrap gap-2" style="max-height:340px;overflow:auto;padding:4px;">
+                                @foreach ($galeriPaths as $i => $path)
+                                <div class="text-center">
+                                    <img src="{{ asset('storage/' . $path) }}" alt="Foto kegiatan {{ $i + 1 }}" style="width:110px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;">
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" name="hapus_galeri[]" value="{{ $path }}" id="hapusGaleri{{ $i }}">
+                                        <label class="form-check-label text-danger" for="hapusGaleri{{ $i }}" style="font-size:.75rem;">hapus</label>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            <small class="text-muted">Centang "hapus" lalu klik <b>Simpan</b> untuk menghapus foto terpilih.</small>
+                            @else
+                            <div class="border rounded-3 p-4 text-center text-muted" style="font-size:.85rem;">
+                                <i class="fas fa-images d-block mb-2" style="font-size:1.5rem;"></i>Belum ada foto — upload foto kegiatan JANG BANTAH untuk ditampilkan di halaman depan.
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -274,24 +355,83 @@
     }
     document.addEventListener('DOMContentLoaded', toggleHeroType);
 
-    /* Pratinjau gambar yang baru dipilih sebelum disimpan */
-    function previewHeroImage(input) {
-        if (input.files && input.files[0]) {
+    /* ── Media sosial dinamis: tambah baris icon + URL ── */
+    var socialIconOptions = @json(\App\WebsiteContent::socialIconOptions());
+
+    function addSocialRow(icon, url) {
+        var info = document.getElementById('socialEmptyInfo');
+        if (info) info.remove();
+
+        var row = document.createElement('div');
+        row.className = 'row g-2 align-items-center social-row';
+
+        var optionsHtml = '';
+        for (var ico in socialIconOptions) {
+            optionsHtml += '<option value="' + ico + '"' + (ico === (icon || 'fab fa-facebook-f') ? ' selected' : '') + '>' + socialIconOptions[ico] + '</option>';
+        }
+
+        row.innerHTML =
+            '<div class="col-5"><div class="input-group input-group-sm">' +
+            '<span class="input-group-text social-icon-preview"><i class="' + (icon || 'fab fa-facebook-f') + '"></i></span>' +
+            '<select name="social_icon[]" class="form-select social-icon-select">' + optionsHtml + '</select></div></div>' +
+            '<div class="col-6"><input type="text" name="social_url[]" class="form-control form-control-sm" placeholder="https://..." value="' + (url || '') + '"></div>' +
+            '<div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeSocialRow(this)" title="Hapus baris"><i class="fas fa-times"></i></button></div>';
+
+        document.getElementById('socialRows').appendChild(row);
+    }
+
+    function removeSocialRow(btn) {
+        btn.closest('.social-row').remove();
+    }
+
+    /* Update preview icon ketika pilihan icon diubah */
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.classList.contains('social-icon-select')) {
+            var preview = e.target.closest('.social-row').querySelector('.social-icon-preview i');
+            if (preview) preview.className = e.target.value;
+        }
+    });
+
+    /* Pratinjau semua gambar galeri kegiatan yang baru dipilih */
+    function previewGaleri(input) {
+        var container = document.getElementById('galeriPreview');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!input.files || input.files.length === 0) return;
+
+        Array.from(input.files).forEach(function (file) {
             var reader = new FileReader();
             reader.onload = function (e) {
-                var el = document.getElementById('heroImagePreview');
-                if (el.tagName === 'IMG') {
-                    el.src = e.target.result;
-                } else {
-                    var img = document.createElement('img');
-                    img.id = 'heroImagePreview';
-                    img.src = e.target.result;
-                    img.style.cssText = 'width:100%;max-width:280px;border-radius:8px;border:1px solid #dee2e6;object-fit:cover;';
-                    el.replaceWith(img);
-                }
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:110px;height:80px;object-fit:cover;border-radius:6px;border:1px dashed #198754;';
+                container.appendChild(img);
             };
-            reader.readAsDataURL(input.files[0]);
-        }
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* Pratinjau semua gambar yang baru dipilih sebelum disimpan */
+    function previewHeroImages(input) {
+        var container = document.getElementById('heroImagesPreview');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!input.files || input.files.length === 0) return;
+
+        Array.from(input.files).forEach(function (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var wrap = document.createElement('div');
+                wrap.className = 'text-muted';
+                wrap.style.cssText = 'font-size:.65rem;';
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:120px;height:70px;object-fit:cover;border-radius:6px;border:1px dashed #0d6efd;';
+                wrap.appendChild(img);
+                container.appendChild(wrap);
+            };
+            reader.readAsDataURL(file);
+        });
     }
 </script>
 @endpush

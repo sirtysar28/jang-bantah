@@ -10,20 +10,32 @@
             @endif
         </span>
         <div class="d-flex gap-2">
+            <a href="{{ route('admin.aset.import.form') }}" class="btn btn-success btn-sm" title="Import data aset dari Excel"><i class="fas fa-file-excel me-1"></i>Import Excel</a>
             <a href="{{ route('admin.aset.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Tambah Aset</a>
         </div>
     </div>
     <div class="card-body">
         <!-- Filter -->
         <form method="GET" class="row g-2 mb-3">
-            <div class="col-md-3">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nama/nomor..." value="{{ request('search') }}">
+            <div class="col-md-2">
+                <div class="input-group input-group-sm">
+                    <input type="text" name="search" class="form-control" placeholder="Cari nama/nomor..." value="{{ request('search') }}">
+                    <button class="btn btn-outline-primary" title="Cari"><i class="fas fa-search"></i></button>
+                </div>
             </div>
             <div class="col-md-2">
-                <select name="kecamatan_id" class="form-select form-select-sm">
+                <select name="kecamatan_id" id="filterKecamatan" class="form-select form-select-sm">
                     <option value="">Semua Kecamatan</option>
                     @foreach($kecamatans as $k)
                     <option value="{{ $k->id }}" {{ request('kecamatan_id') == $k->id ? 'selected' : '' }}>{{ $k->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="desa_id" id="filterDesa" class="form-select form-select-sm">
+                    <option value="">Semua Desa</option>
+                    @foreach($desas as $d)
+                    <option value="{{ $d->id }}" data-kecamatan="{{ $d->kecamatan_id }}" {{ request('desa_id') == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
                     @endforeach
                 </select>
             </div>
@@ -56,10 +68,36 @@
                     <option value="belum" {{ request('sertifikasi') === 'belum' ? 'selected' : '' }}>Belum Sertifikat</option>
                 </select>
             </div>
-            <div class="col-md-1">
-                <button class="btn btn-sm btn-outline-primary w-100"><i class="fas fa-search"></i></button>
-            </div>
         </form>
+
+        {{-- Filter desa mengikuti kecamatan terpilih --}}
+        @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var kec = document.getElementById('filterKecamatan');
+                var desa = document.getElementById('filterDesa');
+                if (!kec || !desa) return;
+
+                function filterDesaOptions() {
+                    var kecId = kec.value;
+                    var selected = desa.value;
+                    Array.from(desa.options).forEach(function (opt) {
+                        if (!opt.value) return; // option "Semua Desa"
+                        var match = !kecId || opt.dataset.kecamatan === kecId;
+                        opt.hidden = !match;
+                        opt.disabled = !match;
+                        if (selected && opt.value === selected && !match) {
+                            desa.value = '';
+                            selected = '';
+                        }
+                    });
+                }
+
+                kec.addEventListener('change', filterDesaOptions);
+                filterDesaOptions();
+            });
+        </script>
+        @endpush
 
         <div class="table-responsive">
             <table class="table table-hover">
@@ -73,6 +111,7 @@
                         <th>Luas (m²)</th>
                         <th>Nilai Aset</th>
                         <th>Status</th>
+                        <th>Publikasi</th>
                         <th>Sertifikat</th>
                         <th>Aksi</th>
                     </tr>
@@ -93,6 +132,13 @@
                             </span>
                         </td>
                         <td>
+                            @if($aset->is_validated)
+                            <span class="badge bg-success" title="Sudah disetujui & tampil publik"><i class="fas fa-check-circle me-1"></i>Tampil Publik</span>
+                            @else
+                            <span class="badge bg-warning text-dark" title="Menunggu persetujuan Admin Aset / Super Admin"><i class="fas fa-hourglass-half me-1"></i>Menunggu</span>
+                            @endif
+                        </td>
+                        <td>
                             @if($aset->sertifikasi)
                             <span class="badge bg-{{ in_array($aset->sertifikasi->status, ['terbit_sertifikat', 'selesai']) ? 'success' : 'warning' }}">
                                 {{ $aset->sertifikasi->status_label }}
@@ -104,6 +150,14 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('admin.aset.show', $aset) }}" class="btn btn-outline-primary" title="Detail"><i class="fas fa-eye"></i></a>
+                                @if(!$aset->is_validated && in_array(auth()->user()->role, ['super_admin', 'admin_aset']))
+                                <form method="POST" action="{{ route('admin.aset.validate', $aset) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-success" title="Setujui & tampilkan publik" onclick="return confirm('Setujui aset &quot;{{ $aset->nama_aset }}&quot; agar tampil publik?')">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                </form>
+                                @endif
                                 <a href="{{ route('admin.aset.edit', $aset) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                 @if(auth()->user()->role === 'super_admin')
                                 <form method="POST" action="{{ route('admin.aset.destroy', $aset) }}" style="display:inline;" class="btn-delete-form">

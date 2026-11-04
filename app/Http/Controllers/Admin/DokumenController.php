@@ -57,6 +57,23 @@ class DokumenController extends Controller
         return Storage::disk('public')->download($dokumen->file_path, $dokumen->file_name);
     }
 
+    /**
+     * Preview dokumen secara inline (PDF/gambar langsung tampil di browser,
+     * tidak langsung mengunduh) — fitur RAB: preview dokumen.
+     */
+    public function preview(DokumenAset $dokumen)
+    {
+        if ($dokumen->aset) {
+            OpdAccess::authorize(Auth::user(), $dokumen->aset);
+        }
+
+        abort_unless(Storage::disk('public')->exists($dokumen->file_path), 404, 'File dokumen tidak ditemukan.');
+
+        return Storage::disk('public')->response($dokumen->file_path, $dokumen->file_name, [
+            'Content-Disposition' => 'inline; filename="' . $dokumen->file_name . '"',
+        ]);
+    }
+
     public function destroy(DokumenAset $dokumen)
     {
         if ($dokumen->aset) {

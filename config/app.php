@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Versi Aplikasi JANG BANTAH
+    |--------------------------------------------------------------------------
+    | Naikkan versi setiap ada penambahan/perubahan fitur.
+    | Format: vMAJOR.MINOR.PATCH (semantic versioning)
+    |  - MAJOR: perubahan besar / tidak kompatibel
+    |  - MINOR: penambahan fitur baru (contoh: import Excel, QR Code, galeri)
+    |  - PATCH: perbaikan bug kecil
+    */
+    'version' => env('APP_VERSION', 'v1.2.1'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

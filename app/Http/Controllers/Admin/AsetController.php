@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\AdminNotificationService;
 use App\AuditLogService;
+use App\Exports\AsetTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\AsetImport;
 use App\Models\Aset;
 use App\Models\Desa;
 use App\Models\Kecamatan;
@@ -13,9 +15,57 @@ use App\OpdAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AsetController extends Controller
 {
+    /**
+     * Generate Nomor Register berikutnya dengan format REG-{TAHUN}-{URUT}.
+     * Contoh: REG-2026-0007. Urutan dihitung dari nomor tertinggi
+     * tahun berjalan yang sudah tersimpan di sistem.
+     */
+    public static function generateNomorRegister(): string
+    {
+        $prefix = 'REG-' . now()->format('Y') . '-';
+        $max = Aset::where('nomor_register', 'like', $prefix . '%')->max('nomor_register');
+        $seq = $max ? ((int) substr($max, strlen($prefix))) + 1 : 1;
+
+        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generate Kode Barang berikutnya dengan format KB-{TAHUN}-{URUT}.
+     */
+    public static function generateKodeBarang(): string
+    {
+        $prefix = 'KB-' . now()->format('Y') . '-';
+        $max = Aset::where('kode_barang', 'like', $prefix . '%')->max('kode_barang');
+        $seq = $max ? ((int) substr($max, strlen($prefix))) + 1 : 1;
+
+        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generate pasangan nomor yang dijamin unik (antisipasi dua petugas
+     * membuka form bersamaan — nomor dihitung ulang saat simpan).
+     */
+    private static function uniquePair(): array
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $nomor = self::generateNomorRegister();
+            $kode = self::generateKodeBarang();
+            $bentrok = Aset::where('nomor_register', $nomor)->orWhere('kode_barang', $kode)->exists();
+            if (! $bentrok) {
+                return [$nomor, $kode];
+            }
+        }
+
+        // Fallback amat sangat jarang: tambahkan detik sebagai pembeda
+        $sfx = now()->format('His');
+        return ['REG-' . now()->format('Y') . '-' . $sfx, 'KB-' . now()->format('Y') . '-' . $sfx];
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -30,6 +80,9 @@ class AsetController extends Controller
         }
         if ($request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $request->kecamatan_id);
+        }
+        if ($request->filled('desa_id')) {
+            $query->where('desa_id', $request->desa_id);
         }
         // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
         if ($request->filled('opd_id') && !OpdAccess::limited($user)) {
@@ -48,9 +101,10 @@ class AsetController extends Controller
 
         $asets = $query->latest()->paginate(10);
         $kecamatans = Kecamatan::all();
+        $desas = Desa::all();
         $opds = Opd::all();
 
-        return view('admin.aset.index', compact('asets', 'kecamatans', 'opds'));
+        return view('admin.aset.index', compact('asets', 'kecamatans', 'desas', 'opds'));
     }
 
     public function create()
@@ -61,14 +115,20 @@ class AsetController extends Controller
         $opds = OpdAccess::limited(Auth::user())
             ? Opd::where('id', Auth::user()->opd_id)->get()
             : Opd::all();
-        return view('admin.aset.create', compact('kecamatans', 'desas', 'opds'));
+
+        // Nomor Register & Kode Barang dibuat otomatis oleh sistem (preview;
+        // nomor final dihitung ulang saat disimpan agar selalu unik)
+        [$nextNomor, $nextKode] = self::uniquePair();
+
+        return view('admin.aset.create', compact('kecamatans', 'desas', 'opds', 'nextNomor', 'nextKode'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nomor_register' => 'required|string|unique:asets|max:100',
-            'kode_barang' => 'required|string|max:100',
+            // Dibuat otomatis sistem — nullable: controller yang mengisi
+            'nomor_register' => 'nullable|string|unique:asets|max:100',
+            'kode_barang' => 'nullable|string|max:100',
             'nama_aset' => 'required|string|max:255',
             'kecamatan_id' => 'nullable|exists:kecamatans,id',
             'desa_id' => [
@@ -105,13 +165,28 @@ class AsetController extends Controller
         }
         $validated['created_by'] = Auth::id();
 
+        // ── Nomor Register & Kode Barang OTOMATIS dari sistem ──
+        // Form mengirim flag auto_nomor=1 (field readonly). Nomor dihitung
+        // ulang di sini agar selalu unik walau dua petugas submit bersamaan.
+        if ($request->boolean('auto_nomor') || empty($validated['nomor_register'])) {
+            [$validated['nomor_register'], $validated['kode_barang']] = self::uniquePair();
+        } elseif (empty($validated['kode_barang'])) {
+            $validated['kode_barang'] = self::generateKodeBarang();
+        }
+
+        // ── Alur persetujuan (approval) ──
+        // Aset dari OPD berstatus "menunggu validasi" (belum tampil publik)
+        // hingga disetujui Admin Aset / Super Admin.
+        // Inputan Admin Aset / Super Admin langsung terpublikasi.
+        $user = Auth::user();
+        $validated['is_validated'] = $user->isOpd() ? false : true;
+
         // OPD tidak bisa mendaftarkan aset atas nama OPD lain
         $validated = OpdAccess::forceOpdId(Auth::user(), $validated);
 
         Aset::create($validated);
 
         // Notifikasi: pengajuan aset baru dari OPD masuk ke email admin
-        $user = Auth::user();
         $aset = Aset::where('nomor_register', $validated['nomor_register'])->first();
         if ($user && $user->isOpd()) {
             AdminNotificationService::sendEmail(
@@ -134,7 +209,9 @@ class AsetController extends Controller
             );
         }
 
-        return redirect()->route('admin.aset.index')->with('success', 'Aset berhasil ditambahkan.');
+        return redirect()->route('admin.aset.index')->with('success', $user->isOpd()
+            ? 'Aset berhasil diajukan dengan nomor register ' . $validated['nomor_register'] . '. Menunggu persetujuan Admin Aset / Super Admin agar tampil publik.'
+            : 'Aset berhasil ditambahkan (No. Reg: ' . $validated['nomor_register'] . ') dan langsung terpublikasi.');
     }
 
     public function show(Aset $aset)
@@ -223,6 +300,101 @@ class AsetController extends Controller
         AuditLogService::log('delete', 'Aset', Aset::class, $aset->id, $aset->toArray());
         $aset->delete();
         return redirect()->route('admin.aset.index')->with('success', 'Aset berhasil dihapus.');
+    }
+
+    /**
+     * Form import data aset dari Excel (fitur RAB: import data Excel).
+     */
+    public function importForm()
+    {
+        return view('admin.aset.import');
+    }
+
+    /**
+     * Proses import file Excel/CSV berisi data aset.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // maks 10MB
+        ], [
+            'file.required' => 'Pilih file Excel terlebih dahulu.',
+            'file.mimes'    => 'Format file harus .xlsx, .xls, atau .csv.',
+            'file.max'      => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        $import = new AsetImport();
+
+        try {
+            Excel::import($import, $request->file('file')->getRealPath());
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            return back()->withErrors(['file' => 'Struktur file tidak valid. Pastikan menggunakan template resmi.'])
+                ->with('error', 'Import gagal: struktur file tidak dikenali.');
+        } catch (\Throwable $e) {
+            return back()->withErrors(['file' => 'File tidak dapat dibaca: ' . $e->getMessage()])
+                ->with('error', 'Import gagal diproses.');
+        }
+
+        // Ringkasan hasil import
+        $summary = "Import selesai — {$import->inserted} data tersimpan, {$import->skipped} dilewati (duplikat).";
+
+        if ($import->errors) {
+            $detail = collect($import->errors)->map(fn ($msg, $row) => "Baris {$row}: {$msg}")->all();
+            return back()->with('import_result', [
+                'summary' => $summary . ' ' . count($detail) . ' baris gagal.',
+                'errors'  => $detail,
+                'inserted' => $import->inserted,
+                'skipped' => $import->skipped,
+            ]);
+        }
+
+        return back()->with('import_result', [
+            'summary' => $summary,
+            'errors'  => [],
+            'inserted' => $import->inserted,
+            'skipped' => $import->skipped,
+        ]);
+    }
+
+    /**
+     * Download template Excel untuk import data aset.
+     */
+    public function template()
+    {
+        return Excel::download(new AsetTemplateExport(), 'template-import-aset.xlsx');
+    }
+
+    /**
+     * QR Code identifikasi aset (fitur RAB) — berisi URL peta publik
+     * yang otomatis menitik-kan & membuka popup bidang tanah terkait.
+     * Tambahkan ?download=1 untuk mengunduh sebagai file gambar.
+     */
+    public function qrCode(Request $request, Aset $aset)
+    {
+        $url = route('map.public') . '?aset=' . urlencode($aset->nomor_register);
+
+        // PNG bila ekstensi imagick tersedia, selain itu SVG (selalu didukung,
+        // tidak butuh ekstensi PHP tambahan dan tetap tajam saat dicetak)
+        if (extension_loaded('imagick')) {
+            $content = QrCode::format('png')->size(400)->margin(2)->errorCorrection('M')->generate($url);
+            $mime    = 'image/png';
+            $ext     = 'png';
+        } else {
+            $content = QrCode::format('svg')->size(400)->margin(2)->errorCorrection('M')->generate($url);
+            $mime    = 'image/svg+xml';
+            $ext     = 'svg';
+        }
+
+        $headers = [
+            'Content-Type'  => $mime,
+            'Cache-Control' => 'public, max-age=86400',
+        ];
+
+        if ($request->boolean('download')) {
+            $headers['Content-Disposition'] = 'attachment; filename="QR-' . $aset->nomor_register . '.' . $ext . '"';
+        }
+
+        return response($content, 200, $headers);
     }
 
     public function validateAset(Aset $aset)

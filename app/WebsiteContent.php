@@ -22,7 +22,8 @@ class WebsiteContent
             /* ── Hero (halaman depan) ── */
             'web_hero_type'       => 'video', // "video" atau "image"
             'web_hero_video'       => 'FwCIWtT9TiM', // ID video YouTube
-            'web_hero_image'       => '', // path gambar hero (kosong = belum ada)
+            'web_hero_image'       => '', // path gambar hero (legacy — kini memakai web_hero_images)
+            'web_hero_images'      => '', // JSON array path gambar hero (slider, jumlah tak dibatasi)
             'web_hero_badge'       => 'PEMERINTAH KABUPATEN HALMAHERA BARAT',
             'web_hero_title'       => 'JANG BANTAH',
             'web_hero_subtitle'    => 'Jaringan Bank Tanah — Pemkab. Halmahera Barat',
@@ -51,6 +52,11 @@ class WebsiteContent
             'web_alur_desc'  => 'Proses end-to-end pengelolaan bank tanah dari pendataan hingga pemanfaatan.',
             'web_alur_steps' => "Pendataan Aset\nValidasi Data\nUpload Dokumen\nVerifikasi\nInput GIS\nPengamanan Administrasi\nPengamanan Fisik\nPengamanan Hukum\nPengajuan Sertifikasi\nMonitoring BPN\nTerbit Sertifikat\nPemanfaatan Aset",
 
+            /* ── Section Galeri Kegiatan ── */
+            'web_galeri_title'  => 'Galeri Kegiatan JANG BANTAH',
+            'web_galeri_desc'   => 'Dokumentasi kegiatan pendataan, pengamanan, sertifikasi, dan pemanfaatan aset tanah Pemerintah Kabupaten Halmahera Barat.',
+            'web_galeri_fotos'  => '', // JSON array path foto (jumlah tak dibatasi, diupload Super Admin)
+
             /* ── Footer ── */
             'web_footer_desc'     => "Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat.\nSistem Informasi Manajemen Bank Tanah Digital Terintegrasi.",
             'web_footer_instansi' => 'Pemerintah Daerah Kabupaten Halmahera Barat',
@@ -62,9 +68,9 @@ class WebsiteContent
             'web_footer_link2_url'  => '#',
             'web_footer_link3_name' => 'Diskominfo',
             'web_footer_link3_url'  => '#',
-            'web_social_facebook'   => '#',
-            'web_social_instagram'  => '#',
-            'web_social_youtube'    => '#',
+            // Media sosial dinamis: JSON array [{"icon": "fab fa-facebook-f", "url": "..."}, ...]
+            // Nilai default mengikuti konfigurasi lama (facebook/instagram/youtube)
+            'web_social_links'     => '',
             'web_footer_copyright'  => 'Pemerintah Kabupaten Halmahera Barat — JANG BANTAH — Jaringan Bank Tanah',
 
             /* ── Halaman Tentang ── */
@@ -109,23 +115,53 @@ class WebsiteContent
     }
 
     /**
-     * URL gambar hero (null bila belum ada gambar yang diupload).
+     * Path relatif semua gambar hero di disk public (array).
+     * Sumber utama: setting JSON "web_hero_images"; bila kosong,
+     * fallback ke gambar tunggal lama ("web_hero_image").
      */
-    public static function heroImageUrl(): ?string
+    public static function heroImagePaths(): array
     {
-        $path = trim((string) Setting::get('web_hero_image', ''));
+        $raw = trim((string) Setting::get('web_hero_images', ''));
 
-        return $path !== '' ? asset('storage/' . $path) : null;
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter(array_map('trim', $decoded)));
+            }
+        }
+
+        // Fallback gambar tunggal lama
+        $legacy = trim((string) Setting::get('web_hero_image', ''));
+        return $legacy !== '' ? [$legacy] : [];
     }
 
     /**
-     * Path relatif gambar hero di disk public (untuk hapus file).
+     * URL semua gambar hero (array) untuk ditampilkan di hero.
+     * 1 gambar = background statis, lebih dari 1 = otomatis slider.
+     */
+    public static function heroImages(): array
+    {
+        return array_map(
+            fn (string $path) => asset('storage/' . $path),
+            static::heroImagePaths()
+        );
+    }
+
+    /**
+     * URL gambar hero pertama (null bila belum ada) — kompatibilitas kode lama.
+     */
+    public static function heroImageUrl(): ?string
+    {
+        return static::heroImages()[0] ?? null;
+    }
+
+    /**
+     * Path relatif gambar hero pertama di disk public (untuk hapus file) —
+     * kompatibilitas kode lama.
      */
     public static function heroImagePath(): ?string
     {
-        $path = trim((string) Setting::get('web_hero_image', ''));
-
-        return $path !== '' ? $path : null;
+        return static::heroImagePaths()[0] ?? null;
     }
 
     /**
@@ -147,6 +183,96 @@ class WebsiteContent
         return "https://www.youtube.com/embed/{$id}?autoplay=1&mute=1&loop=1&playlist={$id}"
             . '&controls=0&showinfo=0&modestbranding=1&rel=0&iv_load_policy=3'
             . '&playsinline=1&disablekb=1&fs=0&cc_load_policy=0';
+    }
+
+    /**
+     * Daftar pilihan icon media sosial (Font Awesome) yang tersedia
+     * untuk dipilih Super Admin di form Kelola Website.
+     */
+    public static function socialIconOptions(): array
+    {
+        return [
+            'fab fa-facebook-f'    => 'Facebook',
+            'fab fa-instagram'     => 'Instagram',
+            'fab fa-youtube'       => 'YouTube',
+            'fab fa-x-twitter'     => 'X (Twitter)',
+            'fab fa-tiktok'        => 'TikTok',
+            'fab fa-whatsapp'      => 'WhatsApp',
+            'fab fa-telegram'      => 'Telegram',
+            'fab fa-linkedin-in'   => 'LinkedIn',
+            'fab fa-twitter'       => 'Twitter (lama)',
+            'fab fa-threads'       => 'Threads',
+            'fas fa-globe'         => 'Website',
+            'fas fa-envelope'      => 'Email',
+        ];
+    }
+
+    /**
+     * Daftar media sosial footer sebagai array [
+     *   ['icon' => 'fab fa-facebook-f', 'url' => 'https://...'], ...
+     * ]
+     * Jumlah tidak dibatasi — dikelola Super Admin di form Kelola Website.
+     *
+     * Backward-compat: bila JSON baru (web_social_links) kosong, otomatis
+     * membaca key lama web_social_facebook / instagram / youtube.
+     */
+    public static function socialLinks(): array
+    {
+        $raw = trim((string) Setting::get('web_social_links', ''));
+
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $links = [];
+                foreach ($decoded as $item) {
+                    $icon = trim((string) ($item['icon'] ?? ''));
+                    $url  = trim((string) ($item['url'] ?? ''));
+                    if ($icon !== '' && $url !== '' && $url !== '#') {
+                        $links[] = ['icon' => $icon, 'url' => $url];
+                    }
+                }
+                return $links;
+            }
+        }
+
+        // Fallback key lama
+        $legacy = [
+            ['icon' => 'fab fa-facebook-f', 'url' => trim((string) Setting::get('web_social_facebook', '#'))],
+            ['icon' => 'fab fa-instagram',  'url' => trim((string) Setting::get('web_social_instagram', '#'))],
+            ['icon' => 'fab fa-youtube',    'url' => trim((string) Setting::get('web_social_youtube', '#'))],
+        ];
+
+        return array_values(array_filter($legacy, fn ($l) => $l['url'] !== '' && $l['url'] !== '#'));
+    }
+
+    /**
+     * Path relatif semua foto galeri kegiatan di disk public.
+     * Disimpan sebagai JSON pada setting "web_galeri_fotos".
+     */
+    public static function galeriPhotoPaths(): array
+    {
+        $raw = trim((string) Setting::get('web_galeri_fotos', ''));
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded)
+            ? array_values(array_filter(array_map('trim', $decoded)))
+            : [];
+    }
+
+    /**
+     * URL semua foto galeri kegiatan untuk ditampilkan di halaman depan.
+     */
+    public static function galeriPhotos(): array
+    {
+        return array_map(
+            fn (string $path) => asset('storage/' . $path),
+            static::galeriPhotoPaths()
+        );
     }
 
     /**

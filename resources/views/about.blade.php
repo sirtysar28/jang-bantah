@@ -19,6 +19,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto gap-1">
                     <li class="nav-item"><a class="nav-link text-white" href="{{ route('home') }}">Beranda</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="{{ route('aset.publik') }}">Data Aset</a></li>
                     <li class="nav-item"><a class="nav-link text-white active" href="{{ route('about') }}">Tentang</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="{{ route('map.public') }}">Peta Aset</a></li>
                     <li class="nav-item"><a class="btn btn-gold btn-sm px-4" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-1"></i> Login Admin</a></li>

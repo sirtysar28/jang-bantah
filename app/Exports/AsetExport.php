@@ -27,7 +27,7 @@ class AsetExport implements FromCollection, WithHeadings, WithMapping, WithTitle
         return 'Laporan Data Aset Tanah';
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Enumerable
     {
         $query = Aset::with(['kecamatan', 'desa', 'opd', 'sertifikasi', 'pengamananHukum']);
 
@@ -36,6 +36,9 @@ class AsetExport implements FromCollection, WithHeadings, WithMapping, WithTitle
 
         if ($this->request->filled('kecamatan_id')) {
             $query->where('kecamatan_id', $this->request->kecamatan_id);
+        }
+        if ($this->request->filled('desa_id')) {
+            $query->where('desa_id', $this->request->desa_id);
         }
         // Filter OPD hanya untuk admin (OPD sudah terkunci ke OPD-nya sendiri)
         if ($this->request->filled('opd_id') && !OpdAccess::limited(Auth::user())) {

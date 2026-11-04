@@ -10,14 +10,36 @@
     <div class="card-body">
         <form method="POST" action="{{ route('admin.aset.store') }}" enctype="multipart/form-data">
             @csrf
+            {{-- Flag: nomor & kode dibuat otomatis sistem (dihitung ulang saat simpan agar unik) --}}
+            <input type="hidden" name="auto_nomor" value="1">
+            @if(auth()->user()->role === 'opd')
+            <div class="alert alert-warning d-flex align-items-start gap-2 py-2" style="font-size:.85rem;">
+                <i class="fas fa-clock mt-1"></i>
+                <div>
+                    <b>Aset menunggu persetujuan.</b> Data yang Anda ajukan akan diperiksa
+                    terlebih dahulu oleh <b>Admin Aset / Super Admin</b> sebelum tampil di
+                    halaman publik. Anda akan menerima email pemberitahuan saat aset disetujui.
+                </div>
+            </div>
+            @endif
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-500" style="font-size:.85rem;">Nomor Register <span class="text-danger">*</span></label>
-                    <input type="text" name="nomor_register" class="form-control" value="{{ old('nomor_register') }}" required>
+                    <label class="form-label fw-500" style="font-size:.85rem;">
+                        Nomor Register
+                        <span class="badge bg-primary ms-1" style="font-size:.62rem;"><i class="fas fa-robot me-1"></i>Otomatis dari sistem</span>
+                    </label>
+                    <input type="text" class="form-control bg-light" value="{{ old('nomor_register', $nextNomor) }}" readonly tabindex="-1" title="Nomor register dibuat otomatis oleh sistem berdasarkan urutan">
+                    <input type="hidden" name="nomor_register" value="">
+                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-info-circle me-1"></i>Nomor urut dihitung otomatis sistem saat data disimpan.</small>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-500" style="font-size:.85rem;">Kode Barang <span class="text-danger">*</span></label>
-                    <input type="text" name="kode_barang" class="form-control" value="{{ old('kode_barang') }}" required>
+                    <label class="form-label fw-500" style="font-size:.85rem;">
+                        Kode Barang
+                        <span class="badge bg-primary ms-1" style="font-size:.62rem;"><i class="fas fa-robot me-1"></i>Otomatis dari sistem</span>
+                    </label>
+                    <input type="text" class="form-control bg-light" value="{{ old('kode_barang', $nextKode) }}" readonly tabindex="-1" title="Kode barang dibuat otomatis oleh sistem berdasarkan urutan">
+                    <input type="hidden" name="kode_barang" value="">
+                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-info-circle me-1"></i>Kode unik barang dihasilkan otomatis sistem.</small>
                 </div>
                 <div class="col-md-12">
                     <label class="form-label fw-500" style="font-size:.85rem;">Nama Aset <span class="text-danger">*</span></label>

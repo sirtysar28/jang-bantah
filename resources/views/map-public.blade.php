@@ -14,6 +14,7 @@
                 </div>
             </a>
             <div class="ms-auto d-flex gap-2">
+                <a href="{{ route('aset.publik') }}" class="btn btn-outline-light btn-sm px-3"><i class="fas fa-layer-group me-1"></i>Data Aset</a>
                 <a href="{{ route('home') }}" class="btn btn-gold btn-sm px-3"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
             </div>
         </div>
@@ -106,13 +107,28 @@ mapAsets.forEach(function(a) {
         .addTo(map)
         .bindPopup(a.popup, { maxWidth: 320 });
 
+    marker.nr = a.nr; // nomor register — dipakai fokus QR Code
     allMarkers.push(marker);
     if (markerGroups[a.group]) {
         markerGroups[a.group].push(marker);
     }
 });
 
-if (allMarkers.length > 0) {
+// Fokus bidang tanah tertentu (hasil scan QR Code ?aset=NOMOR_REGISTER)
+var focusNr = {{ Illuminate\Support\Js::from($focusRegister ?? null) }};
+if (focusNr) {
+    var focusMarker = allMarkers.find(function(m) { return m.nr === focusNr; });
+    if (focusMarker) {
+        map.setView([focusMarker.getLatLng().lat, focusMarker.getLatLng().lng], 16);
+        focusMarker.openPopup();
+    } else {
+        if (allMarkers.length > 0) {
+            map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.1));
+        } else {
+            map.setView([1.65, 127.8], 11);
+        }
+    }
+} else if (allMarkers.length > 0) {
     map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.1));
 } else {
     map.setView([1.65, 127.8], 11);

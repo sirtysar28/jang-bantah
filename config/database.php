@@ -29,6 +29,17 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Konstanta PDO SSL CA yang kompatibel lintas versi PHP
+    |--------------------------------------------------------------------------
+    | PHP 8.5 mendeprekasi konstanta PDO::MYSQL_ATTR_SSL_CA dan menggantinya
+    | dengan enum Pdo\Mysql::ATTR_SSL_CA — keduanya bernilai int 1013.
+    | Memakai nilai integer langsung menghindari deprecation di PHP 8.5+
+    | dan tetap berjalan normal di PHP 8.3/8.4.
+    */
+    'mysql_ssl_ca' => 1013, // == PDO::MYSQL_ATTR_SSL_CA
+
     'connections' => [
 
         'sqlite' => [
@@ -57,9 +68,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') && env('MYSQL_ATTR_SSL_CA') ? [
+                config('database.mysql_ssl_ca') => env('MYSQL_ATTR_SSL_CA'),
+            ] : [],
         ],
 
         'mariadb' => [
@@ -77,9 +88,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql') && env('MYSQL_ATTR_SSL_CA') ? [
+                config('database.mysql_ssl_ca') => env('MYSQL_ATTR_SSL_CA'),
+            ] : [],
         ],
 
         'pgsql' => [

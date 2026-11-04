@@ -119,7 +119,15 @@
     <div class="col-lg-8 jb-reveal">
         <div class="chart-card h-100">
             <h5><i class="fas fa-map-location-dot me-2"></i>Sebaran Aset per Kecamatan</h5>
-            <div class="chart-wrap" style="height:320px"><canvas id="chartKecamatan"></canvas></div>
+            @if ($sebaranKecamatan->count() > 0)
+            {{-- Tinggi menyesuaikan jumlah bar; diberi ruang ekstra agar bar antar kecamatan terpisah jelas --}}
+            <div class="chart-wrap" style="height:{{ max(220, $sebaranKecamatan->count() * 42 + 40) }}px"><canvas id="chartKecamatan"></canvas></div>
+            @else
+            <div class="text-center text-muted py-5" style="min-height:220px;">
+                <i class="fas fa-map-location-dot mb-3" style="font-size:2.4rem; opacity:.35;"></i>
+                <p class="mb-0 small">Belum ada aset yang tercatat per kecamatan.<br>Aset akan muncul di grafik ini setelah ditambahkan.</p>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -301,31 +309,93 @@
             }
         });
 
-        /* ================== CHART: SEBARAN ASET PER KECAMATAN (bar horizontal) ================== */
-        safeChart('chartKecamatan', {
-            type: 'bar',
-            data: {
-                labels: [{!! $sebaranKecamatan->pluck('nama')->toJson() !!}],
-                datasets: [{
-                    label: 'Jumlah Bidang',
-                    data: [{!! $sebaranKecamatan->pluck('asets_count')->toJson() !!}],
-                    backgroundColor: function (ctx) { return jbGradient(ctx, 'rgba(95, 168, 211, .35)', 'rgba(27, 73, 101, .9)'); },
-                    hoverBackgroundColor: JB_ACCENT,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    maxBarThickness: 22
-                }]
-            },
-            options: {
-                ...baseOptions,
-                indexAxis: 'y',
-                plugins: { legend: { display: false }, tooltip: tooltipStyle },
-                scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0 }, grid: gridStyle },
-                    y: { grid: { display: false } }
+        /* ================== CHART: SEBARAN ASET PER KECAMATAN (bar horizontal) ==================
+           Satu bar per kecamatan (diurut dari jumlah terbanyak — data dari controller).
+           Bar DIPISAH (ada jarak antar bar) dan tiap kecamatan punya WARNA & BENTUK
+           (radius sudut) SENDIRI — warna & bentuk dihitung di PHP lalu dikirim sebagai
+           array statis, jadi tiap bar PASTI beda (tidak mungkin menyatu jadi 1 bar
+           seragam). Angka jumlah aset juga digambar di ujung tiap bar supaya
+           perbedaan jumlah antar kecamatan langsung terlihat. */
+        const chartKecEl = document.getElementById('chartKecamatan');
+        if (chartKecEl) {
+            @php
+                /* Palet warna per kecamatan — biru khas JANG BANTAH + warna pendukung (disiklus) */
+                $kecPalette = [
+                    '#1B4965', '#F39C12', '#27AE60', '#E74C3C', '#8E44AD', '#2980B9',
+                    '#16A085', '#D35400', '#C0392B', '#F1C40F', '#5FA8D3', '#D4AC0D',
+                ];
+                /* Variasi bentuk bar: pill / membulat / tumpul (siklus radius sudut) */
+                $kecRadiiPool = [16, 8, 3, 12, 5];
+
+                /* Gelapkan warna untuk efek hover */
+                $kecDarken = function (string $hex): string {
+                    $rgb = array_map(fn ($c) => (int) round(hexdec($c) * 0.72), str_split(substr($hex, 1), 2));
+                    return sprintf('#%02x%02x%02x', ...$rgb);
+                };
+
+                /* Warna & bentuk per kecamatan — statis dari server, bukan fungsi JS */
+                $kecColors = $sebaranKecamatan->values()
+                    ->map(fn ($k, $i) => $kecPalette[$i % count($kecPalette)])
+                    ->values();
+                $kecHover  = $kecColors->map(fn ($c) => $kecDarken($c));
+                $kecRadii  = $sebaranKecamatan->values()
+                    ->map(fn ($k, $i) => $kecRadiiPool[$i % count($kecRadiiPool)])
+                    ->values();
+            @endphp
+
+            const KEC_COLORS = {{ Illuminate\Support\Js::from($kecColors) }};
+            const KEC_HOVER  = {{ Illuminate\Support\Js::from($kecHover) }};
+            const KEC_RADII  = {{ Illuminate\Support\Js::from($kecRadii) }};
+
+            /* Plugin kecil: gambar angka jumlah aset di ujung tiap bar */
+            const kecValueLabels = {
+                id: 'kecValueLabels',
+                afterDatasetsDraw: function (chart) {
+                    var ctx = chart.ctx;
+                    ctx.save();
+                    ctx.font = '700 11px "Segoe UI", Arial, sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    chart.getDatasetMeta(0).data.forEach(function (bar, i) {
+                        ctx.fillStyle = KEC_COLORS[i] || '#0D2B3E';
+                        ctx.fillText(chart.data.datasets[0].data[i], bar.x + 7, bar.y);
+                    });
+                    ctx.restore();
                 }
-            }
-        });
+            };
+
+            safeChart('chartKecamatan', {
+                type: 'bar',
+                data: {
+                    labels: [{!! $sebaranKecamatan->pluck('nama')->toJson() !!}],
+                    datasets: [{
+                        label: 'Jumlah Bidang',
+                        data: [{!! $sebaranKecamatan->pluck('asets_count')->toJson() !!}],
+                        backgroundColor: KEC_COLORS,      /* array statis: tiap bar beda warna */
+                        hoverBackgroundColor: KEC_HOVER,
+                        borderRadius: KEC_RADII,          /* array statis: tiap bar beda bentuk */
+                        borderSkipped: false,
+                        maxBarThickness: 26
+                    }]
+                },
+                options: {
+                    ...baseOptions,
+                    indexAxis: 'y',
+                    layout: { padding: { right: 34 } }, /* ruang untuk angka di ujung bar */
+                    plugins: { legend: { display: false }, tooltip: tooltipStyle },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 }, grid: gridStyle },
+                        y: {
+                            grid: { display: false },
+                            ticks: { autoSkip: false },
+                            categoryPercentage: 0.5, /* bar dipisah: jarak jelas antar kecamatan */
+                            barPercentage: 0.75
+                        }
+                    }
+                },
+                plugins: [kecValueLabels]
+            });
+        }
     }
 </script>
 @endpush

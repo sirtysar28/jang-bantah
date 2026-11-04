@@ -97,7 +97,7 @@
             <div class="card-header"><i class="fas fa-info-circle me-2"></i>Informasi Sistem</div>
             <div class="card-body">
                 <table class="table table-sm mb-0" style="font-size:.85rem;">
-                    <tr><td>Aplikasi</td><td class="fw-500">JANG BANTAH v1.0</td></tr>
+                    <tr><td>Aplikasi</td><td class="fw-500">JANG BANTAH {{ config('app.version') }}</td></tr>
                     <tr><td>Framework</td><td class="fw-500">Laravel {{ app()->version() }}</td></tr>
                     <tr><td>PHP</td><td class="fw-500">{{ PHP_VERSION }}</td></tr>
                     <tr><td>Database</td><td class="fw-500">{{ config('database.default') }}</td></tr>
