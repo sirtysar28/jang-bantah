@@ -14,6 +14,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/tentang', [HomeController::class, 'about'])->name('about');
 Route::get('/peta-publik', [HomeController::class, 'mapPublic'])->name('map.public');
 Route::get('/data-aset', [HomeController::class, 'dataAset'])->name('aset.publik');
+Route::get('/video', [HomeController::class, 'videos'])->name('video.publik');
+Route::get('/berita', [HomeController::class, 'berita'])->name('berita.publik');
 
 /*
 |--------------------------------------------------------------------------
@@ -117,6 +119,11 @@ Route::middleware(['auth', 'role:super_admin,admin_aset,opd,pimpinan'])->prefix(
     // Kelola Konten Website Publik (hero video, teks, footer, tentang) — khusus Super Admin
     Route::get('website', [App\Http\Controllers\Admin\WebsiteController::class, 'index'])->name('website.index')->middleware('role:super_admin');
     Route::post('website', [App\Http\Controllers\Admin\WebsiteController::class, 'update'])->name('website.update')->middleware('role:super_admin');
+
+    // Berita website publik (tambah/edit/hapus tanpa batas) — khusus Super Admin
+    Route::post('website/berita', [App\Http\Controllers\Admin\WebsiteController::class, 'storeBerita'])->name('website.berita.store')->middleware('role:super_admin');
+    Route::post('website/berita/{berita}', [App\Http\Controllers\Admin\WebsiteController::class, 'updateBerita'])->name('website.berita.update')->middleware('role:super_admin');
+    Route::delete('website/berita/{berita}', [App\Http\Controllers\Admin\WebsiteController::class, 'destroyBerita'])->name('website.berita.destroy')->middleware('role:super_admin');
 
     // Web Terminal (pengganti terminal cPanel — khusus Super Admin)
     Route::get('terminal', [App\Http\Controllers\Admin\TerminalController::class, 'index'])->name('terminal.index')->middleware('role:super_admin');

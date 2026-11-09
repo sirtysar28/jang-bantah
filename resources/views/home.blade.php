@@ -16,8 +16,10 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
-                    <li class="nav-item"><a class="nav-link nav-link-sd active" href="{{ route('home') }}"><i class="fas fa-home me-1"></i>Beranda</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('home') }}"><i class="fas fa-home me-1"></i>Beranda</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('aset.publik') }}"><i class="fas fa-layer-group me-1"></i>Data Aset</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('berita.publik') }}"><i class="fas fa-newspaper me-1"></i>Berita</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('video.publik') }}"><i class="fab fa-youtube me-1"></i>Video</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('about') }}"><i class="fas fa-info-circle me-1"></i>Tentang</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('map.public') }}"><i class="fas fa-map-marked-alt me-1"></i>Peta Aset</a></li>
                     <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
@@ -218,6 +220,60 @@
     </section>
     @endif
 
+    <!-- ══════════════════ VIDEO YOUTUBE JANG BANTAH ══════════════════ -->
+    {{-- Link video dikelola Super Admin (menu Kelola Website); jumlah tak dibatasi.
+         Halaman depan menampilkan maks 3 thumbnail — sisanya via tombol ke halaman /video --}}
+    @php
+        $videoItems   = \App\WebsiteContent::videoItems();
+        $videoOnHome  = array_slice($videoItems, 0, 3);
+        $videoCount   = count(array_filter($videoItems, fn ($v) => $v['type'] === 'video'));
+    @endphp
+    @if (count($videoItems) > 0)
+    <section class="py-5 py-lg-6 video-section" id="videoYoutube">
+        <div class="container">
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Kanal Video</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_video_title') }}</h2>
+                <p class="section-desc">{{ \App\WebsiteContent::get('web_video_desc') }}</p>
+            </div>
+            <div class="row g-3 g-md-4 justify-content-center">
+                @foreach ($videoOnHome as $i => $video)
+                @if ($video['type'] === 'video')
+                <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+                    <div class="video-item reveal" role="button" tabindex="0" data-video-id="{{ $video['id'] }}" title="Tonton video di YouTube" style="transition-delay: {{ $i * 0.08 }}s;">
+                        <img src="{{ $video['thumb'] }}" alt="Video YouTube {{ $i + 1 }}" loading="lazy">
+                        <span class="video-play"><i class="fas fa-play"></i></span>
+                        <span class="video-badge"><i class="fab fa-youtube me-1"></i>YouTube</span>
+                    </div>
+                </div>
+                @else
+                <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+                    <a href="{{ $video['url'] }}" target="_blank" rel="noopener" class="video-item video-channel reveal d-flex align-items-center gap-3" title="Buka channel YouTube di tab baru" style="transition-delay: {{ $i * 0.08 }}s;">
+                        <span class="video-channel-icon"><i class="fab fa-youtube"></i></span>
+                        <span class="text-start flex-grow-1">
+                            <span class="d-block fw-600 video-channel-title">Channel YouTube Kami</span>
+                            <span class="d-block video-channel-sub">Tonton video lainnya di channel resmi JANG BANTAH</span>
+                        </span>
+                        <i class="fas fa-external-link-alt video-channel-arrow"></i>
+                    </a>
+                </div>
+                @endif
+                @endforeach
+            </div>
+
+            {{-- Lebih dari 3 item → tombol menuju halaman khusus kumpulan video --}}
+            @if (count($videoItems) > 3)
+            <div class="text-center mt-4 reveal">
+                <a href="{{ route('video.publik') }}" class="btn btn-blue px-4">
+                    <i class="fab fa-youtube me-2"></i>Lihat Semua Video
+                    <span class="badge bg-light text-dark ms-1">{{ $videoCount }} video</span>
+                </a>
+            </div>
+            @endif
+        </div>
+    </section>
+    @endif
+
     <!-- ══════════════════ FITUR SECTION ══════════════════ -->
     <section class="py-5 py-lg-6 bg-white">
         <div class="container">
@@ -365,6 +421,51 @@
         </div>
     </section>
 
+    <!-- ══════════════════ BERITA TERBARU ══════════════════ -->
+    {{-- Berita dikelola Super Admin (menu Kelola Website → tab Berita); jumlah tak dibatasi.
+         Halaman depan menampilkan 3 berita terbaru — sisanya via tombol ke halaman khusus /berita --}}
+    @if ($beritaTerbaru->count() > 0)
+    <section class="py-5 py-lg-6 berita-section" id="beritaTerbaru">
+        <div class="container">
+            <div class="text-center mb-5 reveal">
+                <span class="section-eyebrow mb-3">Kabar Terkini</span>
+                <h2 class="section-title mb-2 mt-2">{{ \App\WebsiteContent::get('web_berita_title') }}</h2>
+                <p class="section-desc">{{ \App\WebsiteContent::get('web_berita_desc') }}</p>
+            </div>
+            <div class="row g-4 justify-content-center">
+                @foreach ($beritaTerbaru as $i => $berita)
+                <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+                    <article class="card-soft berita-card reveal h-100" style="transition-delay: {{ $i * 0.08 }}s;">
+                        <div class="berita-thumb">
+                            @if ($berita->gambar)
+                            <img src="{{ $berita->gambarUrl() }}" alt="{{ $berita->judul }}" loading="lazy">
+                            @else
+                            <div class="berita-thumb-placeholder"><i class="fas fa-newspaper"></i></div>
+                            @endif
+                            <span class="berita-date"><i class="fas fa-calendar-alt me-1"></i>{{ $berita->tanggalIndo() }}</span>
+                        </div>
+                        <div class="berita-body">
+                            <h6 class="fw-600 mb-2 berita-title">{{ $berita->judul }}</h6>
+                            <p class="mb-0 berita-excerpt">{{ \Illuminate\Support\Str::limit(strip_tags((string) $berita->deskripsi), 140) }}</p>
+                        </div>
+                    </article>
+                </div>
+                @endforeach
+            </div>
+
+            {{-- Tombol menuju halaman khusus kumpulan seluruh berita --}}
+            <div class="text-center mt-4 reveal">
+                <a href="{{ route('berita.publik') }}" class="btn btn-blue px-4">
+                    <i class="fas fa-newspaper me-2"></i>Berita Lainnya
+                    @if ($totalBerita > 3)
+                    <span class="badge bg-light text-dark ms-1">{{ number_format($totalBerita) }} berita</span>
+                    @endif
+                </a>
+            </div>
+        </div>
+    </section>
+    @endif
+
     <!-- ══════════════════ FOOTER ══════════════════ -->
     <footer class="footer-jb">
         <div class="container">
@@ -420,6 +521,17 @@
         <img src="" alt="Foto kegiatan" id="galeriLbImg">
         <button class="galeri-lightbox-next" id="galeriLbNext" aria-label="Berikutnya"><i class="fas fa-chevron-right"></i></button>
         <div class="galeri-lightbox-counter" id="galeriLbCounter"></div>
+    </div>
+
+    {{-- Popup video YouTube (embed dimuat saat thumbnail diklik) --}}
+    <div class="video-lightbox" id="videoLightbox" aria-hidden="true">
+        <button class="video-lightbox-close" id="videoLbClose" aria-label="Tutup"><i class="fas fa-times"></i></button>
+        <div class="video-lightbox-frame">
+            <iframe id="videoLbFrame" src="" title="Video YouTube JANG BANTAH"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen></iframe>
+        </div>
     </div>
 
     <button class="back-to-top" id="backToTop" aria-label="Kembali ke atas">
@@ -750,6 +862,129 @@
         .galeri-lightbox-next { right: 10px; }
     }
 
+    /* ════════ VIDEO YOUTUBE (thumbnail + popup) ════════ */
+    .video-section { background: linear-gradient(180deg, #fff 0%, var(--blue-50) 100%); }
+    .video-item {
+        position: relative;
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0,42,92,.08);
+        aspect-ratio: 16 / 9;
+        cursor: pointer;
+        background: var(--blue-100);
+    }
+    .video-item img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform .55s ease;
+    }
+    .video-item:hover img { transform: scale(1.06); }
+    .video-play {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 64px; height: 64px;
+        border-radius: 999px;
+        background: rgba(255,0,0,.88);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.35rem;
+        padding-left: 4px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
+        transition: transform .3s ease, background .3s ease, box-shadow .3s ease;
+    }
+    .video-item:hover .video-play {
+        transform: translate(-50%, -50%) scale(1.14);
+        background: #e60000;
+        box-shadow: 0 14px 36px rgba(230,0,0,.45);
+    }
+    .video-badge {
+        position: absolute;
+        left: 12px; bottom: 12px;
+        display: inline-flex; align-items: center;
+        padding: .28rem .7rem;
+        border-radius: 999px;
+        background: rgba(0,0,0,.55);
+        color: #fff;
+        font-size: .65rem;
+        font-weight: 600;
+        letter-spacing: .5px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    /* Kartu link channel YouTube */
+    .video-channel {
+        aspect-ratio: auto;
+        min-height: 100%;
+        padding: 22px 22px;
+        align-items: center;
+        text-decoration: none;
+        background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 55%, var(--blue-600) 100%);
+        cursor: pointer;
+    }
+    .video-channel:hover { text-decoration: none; }
+    .video-channel-icon {
+        width: 62px; height: 62px;
+        border-radius: 16px;
+        flex: 0 0 auto;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,.13);
+        color: #ff4d4d;
+        font-size: 2rem;
+    }
+    .video-channel-title { color: #fff; font-size: .98rem; }
+    .video-channel-sub { color: rgba(255,255,255,.72); font-size: .78rem; line-height: 1.5; }
+    .video-channel-arrow { color: rgba(255,255,255,.6); font-size: .9rem; transition: transform .3s ease, color .3s ease; }
+    .video-channel:hover .video-channel-arrow { transform: translate(3px, -3px); color: var(--gold); }
+
+    /* ── Popup video YouTube ── */
+    .video-lightbox {
+        position: fixed; inset: 0;
+        background: rgba(2,12,27,.94);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 2100;
+        padding: 24px;
+    }
+    .video-lightbox.open { display: flex; }
+    .video-lightbox-frame {
+        width: min(1000px, 94vw);
+        aspect-ratio: 16 / 9;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 30px 90px rgba(0,0,0,.65);
+        background: #000;
+    }
+    .video-lightbox-frame iframe {
+        width: 100%; height: 100%;
+        border: 0;
+        display: block;
+    }
+    .video-lightbox-close {
+        position: absolute;
+        top: 22px; right: 22px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.25);
+        color: #fff;
+        width: 46px; height: 46px;
+        border-radius: 999px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background .25s ease;
+        font-size: 1.05rem;
+    }
+    .video-lightbox-close:hover { background: rgba(255,255,255,.3); }
+    @media (max-width: 576px) {
+        .video-lightbox { padding: 12px; }
+        .video-lightbox-close { top: 12px; right: 12px; width: 40px; height: 40px; }
+        .video-play { width: 52px; height: 52px; font-size: 1.1rem; }
+    }
+
     /* ════════ FITUR CARD ════════ */
     .feature-modern { padding: 34px 26px; }
     .feature-modern h6 { color: var(--blue-900); font-size: 1rem; }
@@ -829,6 +1064,41 @@
         color: var(--blue-400);
         font-size: .8rem;
     }
+
+    /* ════════ BERITA CARD ════════ */
+    .berita-section { background: linear-gradient(180deg, #fff 0%, var(--blue-50) 55%, var(--blue-50) 100%); }
+    .berita-card { overflow: hidden; display: flex; flex-direction: column; }
+    .berita-thumb { position: relative; overflow: hidden; }
+    .berita-thumb img {
+        width: 100%; height: 200px;
+        object-fit: cover;
+        transition: transform .55s ease;
+        display: block;
+    }
+    .berita-card:hover .berita-thumb img { transform: scale(1.08); }
+    .berita-thumb-placeholder {
+        height: 200px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--blue-100), var(--blue-200));
+    }
+    .berita-thumb-placeholder i { font-size: 3rem; color: var(--blue-400); opacity: .55; }
+    .berita-date {
+        position: absolute;
+        left: 12px; bottom: 12px;
+        display: inline-flex; align-items: center;
+        padding: .3rem .75rem;
+        border-radius: 999px;
+        background: rgba(0,42,92,.72);
+        color: #fff;
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .4px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    .berita-body { padding: 22px 24px 26px; display: flex; flex-direction: column; flex: 1; }
+    .berita-title { color: var(--blue-800); font-size: .98rem; }
+    .berita-excerpt { font-size: .84rem; color: #64748b; line-height: 1.7; }
 
     /* ════════ CTA BANNER ════════ */
     .cta-banner {
@@ -1008,6 +1278,41 @@
             if (e.key === 'Escape') close();
             if (e.key === 'ArrowRight') show(index + 1);
             if (e.key === 'ArrowLeft') show(index - 1);
+        });
+    })();
+
+    /* ── Popup video YouTube (embed dimuat hanya saat diklik) ── */
+    (function videoLightbox() {
+        const lb    = document.getElementById('videoLightbox');
+        if (!lb) return;
+
+        const frame = document.getElementById('videoLbFrame');
+        const items = Array.from(document.querySelectorAll('.video-item[data-video-id]'));
+
+        function open(id) {
+            frame.src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0&modestbranding=1';
+            lb.classList.add('open');
+            lb.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+        function close() {
+            lb.classList.remove('open');
+            lb.setAttribute('aria-hidden', 'true');
+            frame.src = ''; /* kosongkan src agar video berhenti */
+            document.body.style.overflow = '';
+        }
+
+        items.forEach(item => {
+            item.addEventListener('click', () => open(item.dataset.videoId));
+            item.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(item.dataset.videoId); }
+            });
+        });
+
+        document.getElementById('videoLbClose').addEventListener('click', close);
+        lb.addEventListener('click', e => { if (e.target === lb) close(); });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && lb.classList.contains('open')) close();
         });
     })();
 

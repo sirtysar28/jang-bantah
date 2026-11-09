@@ -35,35 +35,21 @@ class AsetController extends Controller
     }
 
     /**
-     * Generate Kode Barang berikutnya dengan format KB-{TAHUN}-{URUT}.
-     */
-    public static function generateKodeBarang(): string
-    {
-        $prefix = 'KB-' . now()->format('Y') . '-';
-        $max = Aset::where('kode_barang', 'like', $prefix . '%')->max('kode_barang');
-        $seq = $max ? ((int) substr($max, strlen($prefix))) + 1 : 1;
-
-        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Generate pasangan nomor yang dijamin unik (antisipasi dua petugas
+     * Generate Nomor Register unik (antisipasi dua petugas
      * membuka form bersamaan — nomor dihitung ulang saat simpan).
+     * Kode Barang tidak lagi dibuat otomatis: diisi manual petugas.
      */
-    private static function uniquePair(): array
+    private static function uniqueNomorRegister(): string
     {
         for ($i = 0; $i < 10; $i++) {
             $nomor = self::generateNomorRegister();
-            $kode = self::generateKodeBarang();
-            $bentrok = Aset::where('nomor_register', $nomor)->orWhere('kode_barang', $kode)->exists();
-            if (! $bentrok) {
-                return [$nomor, $kode];
+            if (! Aset::where('nomor_register', $nomor)->exists()) {
+                return $nomor;
             }
         }
 
         // Fallback amat sangat jarang: tambahkan detik sebagai pembeda
-        $sfx = now()->format('His');
-        return ['REG-' . now()->format('Y') . '-' . $sfx, 'KB-' . now()->format('Y') . '-' . $sfx];
+        return 'REG-' . now()->format('Y') . '-' . now()->format('His');
     }
 
     public function index(Request $request)
@@ -116,19 +102,21 @@ class AsetController extends Controller
             ? Opd::where('id', Auth::user()->opd_id)->get()
             : Opd::all();
 
-        // Nomor Register & Kode Barang dibuat otomatis oleh sistem (preview;
-        // nomor final dihitung ulang saat disimpan agar selalu unik)
-        [$nextNomor, $nextKode] = self::uniquePair();
+        // Nomor Register dibuat otomatis oleh sistem (preview; nomor final
+        // dihitung ulang saat disimpan agar selalu unik). Kode Barang
+        // diisi manual oleh petugas pada form.
+        $nextNomor = self::uniqueNomorRegister();
 
-        return view('admin.aset.create', compact('kecamatans', 'desas', 'opds', 'nextNomor', 'nextKode'));
+        return view('admin.aset.create', compact('kecamatans', 'desas', 'opds', 'nextNomor'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Dibuat otomatis sistem — nullable: controller yang mengisi
+            // Nomor register dibuat otomatis sistem — nullable: controller yang mengisi.
+            // Kode barang diisi manual oleh petugas — wajib & harus unik.
             'nomor_register' => 'nullable|string|unique:asets|max:100',
-            'kode_barang' => 'nullable|string|max:100',
+            'kode_barang' => 'required|string|max:100|unique:asets,kode_barang',
             'nama_aset' => 'required|string|max:255',
             'kecamatan_id' => 'nullable|exists:kecamatans,id',
             'desa_id' => [
@@ -175,6 +163,7 @@ class AsetController extends Controller
             ],
             'foto_lokasi' => 'nullable|image|max:5120',
             'keterangan' => 'nullable|string',
+            'penggunaan' => 'nullable|string',
         ]);
 
         // Polygon dikirim sebagai string JSON dari editor peta — decode agar
@@ -186,13 +175,12 @@ class AsetController extends Controller
         }
         $validated['created_by'] = Auth::id();
 
-        // ── Nomor Register & Kode Barang OTOMATIS dari sistem ──
-        // Form mengirim flag auto_nomor=1 (field readonly). Nomor dihitung
-        // ulang di sini agar selalu unik walau dua petugas submit bersamaan.
+        // ── Nomor Register OTOMATIS, Kode Barang MANUAL ──
+        // Form mengirim flag auto_nomor=1 (field nomor readonly). Nomor
+        // dihitung ulang di sini agar selalu unik walau dua petugas submit
+        // bersamaan. Kode Barang diambil dari input petugas (kode_barang).
         if ($request->boolean('auto_nomor') || empty($validated['nomor_register'])) {
-            [$validated['nomor_register'], $validated['kode_barang']] = self::uniquePair();
-        } elseif (empty($validated['kode_barang'])) {
-            $validated['kode_barang'] = self::generateKodeBarang();
+            $validated['nomor_register'] = self::uniqueNomorRegister();
         }
 
         // ── Alur persetujuan (approval) ──
@@ -307,6 +295,7 @@ class AsetController extends Controller
             ],
             'foto_lokasi' => 'nullable|image|max:5120',
             'keterangan' => 'nullable|string',
+            'penggunaan' => 'nullable|string',
             'is_validated' => 'boolean',
             'is_digital' => 'boolean',
         ]);

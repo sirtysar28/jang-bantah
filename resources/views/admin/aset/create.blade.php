@@ -10,7 +10,8 @@
     <div class="card-body">
         <form method="POST" action="{{ route('admin.aset.store') }}" enctype="multipart/form-data">
             @csrf
-            {{-- Flag: nomor & kode dibuat otomatis sistem (dihitung ulang saat simpan agar unik) --}}
+            {{-- Flag: nomor register dibuat otomatis sistem (dihitung ulang saat simpan agar unik);
+                 kode barang diisi manual oleh petugas --}}
             <input type="hidden" name="auto_nomor" value="1">
             @if(auth()->user()->role === 'opd')
             <div class="alert alert-warning d-flex align-items-start gap-2 py-2" style="font-size:.85rem;">
@@ -34,12 +35,11 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-500" style="font-size:.85rem;">
-                        Kode Barang
-                        <span class="badge bg-primary ms-1" style="font-size:.62rem;"><i class="fas fa-robot me-1"></i>Otomatis dari sistem</span>
+                        Kode Barang <span class="text-danger">*</span>
+                        <span class="badge bg-secondary ms-1" style="font-size:.62rem;"><i class="fas fa-keyboard me-1"></i>Diisi manual</span>
                     </label>
-                    <input type="text" class="form-control bg-light" value="{{ old('kode_barang', $nextKode) }}" readonly tabindex="-1" title="Kode barang dibuat otomatis oleh sistem berdasarkan urutan">
-                    <input type="hidden" name="kode_barang" value="">
-                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-info-circle me-1"></i>Kode unik barang dihasilkan otomatis sistem.</small>
+                    <input type="text" name="kode_barang" class="form-control" value="{{ old('kode_barang') }}" required maxlength="100" placeholder="Contoh: 1.03.01.01.01.0001">
+                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-info-circle me-1"></i>Ketik kode barang sesuai dokumen/register BMD.</small>
                 </div>
                 <div class="col-md-12">
                     <label class="form-label fw-500" style="font-size:.85rem;">Nama Aset <span class="text-danger">*</span></label>
@@ -141,6 +141,11 @@
                 <div class="col-md-8">
                     <label class="form-label fw-500" style="font-size:.85rem;">Foto Lokasi</label>
                     <input type="file" name="foto_lokasi" class="form-control" accept="image/*">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-500" style="font-size:.85rem;">Penggunaan</label>
+                    <textarea name="penggunaan" class="form-control" rows="4" placeholder="Contoh:&#10;- Perkantoran&#10;- Balai desa&#10;- Taman kota">{{ old('penggunaan') }}</textarea>
+                    <small class="text-muted d-block mt-1" style="font-size:.7rem;"><i class="fas fa-info-circle me-1"></i>Bisa diisi lebih dari satu baris (tekan Enter untuk baris baru).</small>
                 </div>
                 <div class="col-md-12">
                     <label class="form-label fw-500" style="font-size:.85rem;">Keterangan</label>

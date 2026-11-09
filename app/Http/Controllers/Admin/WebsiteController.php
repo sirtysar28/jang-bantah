@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Berita;
 use App\Models\Setting;
 use App\WebsiteContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Kelola konten website publik (hero video, teks-teks halaman depan,
@@ -33,7 +35,13 @@ class WebsiteController extends Controller
         // Daftar foto galeri kegiatan (multi-upload)
         $galeriPaths = WebsiteContent::galeriPhotoPaths();
 
-        return view('admin.website.index', compact('content', 'socialLinks', 'heroPaths', 'galeriPaths'));
+        // Daftar link video YouTube (video / channel — jumlah tak dibatasi)
+        $videoLinks = WebsiteContent::videoLinks();
+
+        // Daftar berita website publik (tambah/edit/hapus tanpa batas)
+        $beritas = Berita::latest()->get();
+
+        return view('admin.website.index', compact('content', 'socialLinks', 'heroPaths', 'galeriPaths', 'videoLinks', 'beritas'));
     }
 
     /**
@@ -45,10 +53,10 @@ class WebsiteController extends Controller
         $defaults = WebsiteContent::defaults();
 
         // web_hero_image/web_hero_images & web_galeri_fotos ditangani terpisah sebagai upload file,
-        // web_social_links ditangani terpisah sebagai daftar dinamis (icon + URL)
+        // web_social_links & web_videos ditangani terpisah sebagai daftar dinamis
         $fields = array_values(array_diff(
             array_keys($defaults),
-            ['web_hero_image', 'web_hero_images', 'web_galeri_fotos', 'web_social_links']
+            ['web_hero_image', 'web_hero_images', 'web_galeri_fotos', 'web_social_links', 'web_videos']
         ));
 
         $rules = collect($fields)->mapWithKeys(fn ($f) => [$f => 'nullable|string|max:3000'])->all();
@@ -153,7 +161,115 @@ class WebsiteController extends Controller
 
         Setting::set('web_galeri_fotos', json_encode(array_values($galeriPaths), JSON_UNESCAPED_SLASHES));
 
+        // ── Video YouTube (link video/channel, jumlah tidak dibatasi) ──
+        // Halaman depan menampilkan maks 3 thumbnail; sisanya di halaman khusus /video.
+        $videoLinks = [];
+        $invalidLinks = [];
+
+        foreach ((array) $request->input('video_url', []) as $url) {
+            $url = trim((string) $url);
+
+            // Baris kosong dilewati
+            if ($url === '') {
+                continue;
+            }
+
+            // Bersihkan parameter share YouTube (?si=... / &si=...)
+            $url = rtrim(preg_replace('/([?&])si=[^&]*/', '', $url), '?');
+
+            if (WebsiteContent::extractYoutubeId($url) !== null
+                || WebsiteContent::isYoutubeChannelUrl($url)) {
+                $videoLinks[] = $url;
+            } else {
+                $invalidLinks[] = $url;
+            }
+        }
+
+        $videoLinks = array_values(array_unique($videoLinks));
+
+        Setting::set('web_videos', json_encode($videoLinks, JSON_UNESCAPED_SLASHES));
+
+        $success = 'Konten website berhasil diperbarui.';
+        if ($videoLinks !== []) {
+            $success .= ' Video tersimpan: ' . count($videoLinks) . '.';
+        }
+        if ($invalidLinks !== []) {
+            // Link tidak dikenali tidak ikut disimpan — beri kabar ke Super Admin
+            return redirect()->route('admin.website.index')
+                ->with('error', $success . ' Link berikut tidak dikenali sebagai video/channel YouTube dan diabaikan: '
+                    . implode(', ', array_map(fn ($u) => Str::limit($u, 60), $invalidLinks)));
+        }
+
         return redirect()->route('admin.website.index')
-            ->with('success', 'Konten website berhasil diperbarui.');
+            ->with('success', $success);
+    }
+
+    /**
+     * Tambah berita baru (judul + deskripsi + gambar) — jumlah tak dibatasi.
+     */
+    public function storeBerita(Request $request)
+    {
+        $validated = $request->validate([
+            'judul'    => 'required|string|max:255',
+            'deskripsi' => 'nullable|string|max:5000',
+            'gambar'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'judul.required'  => 'Judul berita wajib diisi.',
+            'gambar.image'    => 'File harus berupa gambar (JPG / PNG / WebP).',
+            'gambar.max'      => 'Ukuran gambar maksimal 5MB.',
+        ]);
+
+        if ($request->hasFile('gambar')) {
+            $validated['gambar'] = $request->file('gambar')->store('website/berita', 'public');
+        }
+
+        Berita::create($validated);
+
+        return redirect()->route('admin.website.index')
+            ->with('success', 'Berita "' . Str::limit($validated['judul'], 60) . '" berhasil ditambahkan.');
+    }
+
+    /**
+     * Perbarui berita (gambar lama dipertahankan bila tidak diganti).
+     */
+    public function updateBerita(Request $request, Berita $berita)
+    {
+        $validated = $request->validate([
+            'judul'    => 'required|string|max:255',
+            'deskripsi' => 'nullable|string|max:5000',
+            'gambar'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'judul.required'  => 'Judul berita wajib diisi.',
+            'gambar.image'    => 'File harus berupa gambar (JPG / PNG / WebP).',
+            'gambar.max'      => 'Ukuran gambar maksimal 5MB.',
+        ]);
+
+        if ($request->hasFile('gambar')) {
+            if ($berita->gambar) {
+                Storage::disk('public')->delete($berita->gambar);
+            }
+            $validated['gambar'] = $request->file('gambar')->store('website/berita', 'public');
+        }
+
+        $berita->update($validated);
+
+        return redirect()->route('admin.website.index')
+            ->with('success', 'Berita "' . Str::limit($validated['judul'], 60) . '" berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus berita (beserta file gambarnya).
+     */
+    public function destroyBerita(Berita $berita)
+    {
+        if ($berita->gambar) {
+            Storage::disk('public')->delete($berita->gambar);
+        }
+
+        $judul = $berita->judul;
+        $berita->delete();
+
+        return redirect()->route('admin.website.index')
+            ->with('success', 'Berita "' . Str::limit($judul, 60) . '" berhasil dihapus.');
     }
 }

@@ -15,7 +15,7 @@ class Aset extends Model
         'kecamatan_id', 'desa_id', 'opd_id',
         'luas', 'nilai_aset', 'status', 'tahun_perolehan', 'sumber_perolehan',
         'alamat', 'latitude', 'longitude', 'polygon', 'foto_lokasi',
-        'keterangan', 'status_dokumen',
+        'keterangan', 'penggunaan', 'status_dokumen',
         'created_by', 'updated_by', 'is_validated', 'is_digital',
     ];
 

@@ -65,6 +65,7 @@
                                 <span class="badge bg-success"><i class="fas fa-draw-polygon me-1"></i>Ada — {{ max(0, count($aset->polygon['coordinates'][0] ?? []) - 1) }} titik sudut</span>
                                 @else <span class="badge bg-secondary">Belum ada — gambar bidang lewat menu Edit</span> @endif</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Alamat</td><td style="font-size:.85rem;">{{ $aset->alamat ?? '-' }}</td></tr>
+                            <tr><td class="fw-500" style="font-size:.85rem;">Penggunaan</td><td style="font-size:.85rem;">@if($aset->penggunaan)<span style="white-space:pre-line;">{{ $aset->penggunaan }}</span>@else-@endif</td></tr>
                             <tr><td class="fw-500" style="font-size:.85rem;">Keterangan</td><td style="font-size:.85rem;">{{ $aset->keterangan ?? '-' }}</td></tr>
                         </table>
                     </div>

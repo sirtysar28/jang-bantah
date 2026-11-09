@@ -57,6 +57,18 @@ class WebsiteContent
             'web_galeri_desc'   => 'Dokumentasi kegiatan pendataan, pengamanan, sertifikasi, dan pemanfaatan aset tanah Pemerintah Kabupaten Halmahera Barat.',
             'web_galeri_fotos'  => '', // JSON array path foto (jumlah tak dibatasi, diupload Super Admin)
 
+            /* ── Section Video YouTube ── */
+            'web_video_title'   => 'Video JANG BANTAH',
+            'web_video_desc'    => 'Kumpulan video kegiatan, sosialisasi, dan profil Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat di YouTube. Klik thumbnail untuk menonton.',
+            // JSON array link YouTube (video apa pun + link channel) — jumlah tak dibatasi,
+            // dikelola Super Admin di menu Kelola Website. Halaman depan menampilkan
+            // maksimal 3 thumbnail, sisanya di halaman khusus /video.
+            'web_videos'        => '["https://youtu.be/hJNMnZ_XpBE","https://youtube.com/@jangbantah_bkadhalbar"]',
+
+            /* ── Section Berita ── */
+            'web_berita_title'  => 'Berita Terbaru',
+            'web_berita_desc'   => 'Kabar terkini seputar pengelolaan, pengamanan, dan pemanfaatan aset tanah Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat.',
+
             /* ── Footer ── */
             'web_footer_desc'     => "Jaringan Bank Tanah Pemerintah Kabupaten Halmahera Barat.\nSistem Informasi Manajemen Bank Tanah Digital Terintegrasi.",
             'web_footer_instansi' => 'Pemerintah Daerah Kabupaten Halmahera Barat',
@@ -273,6 +285,96 @@ class WebsiteContent
             fn (string $path) => asset('storage/' . $path),
             static::galeriPhotoPaths()
         );
+    }
+
+    /**
+     * Daftar mentah seluruh link video YouTube yang disimpan (array string).
+     * Disimpan sebagai JSON pada setting "web_videos".
+     */
+    public static function videoLinks(): array
+    {
+        // get() otomatis fallback ke nilai default bila belum diisi Super Admin
+        $raw = trim(static::get('web_videos'));
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded)
+            ? array_values(array_filter(array_map('trim', $decoded)))
+            : [];
+    }
+
+    /**
+     * Daftar item video YouTube siap tampil sebagai array [
+     *   ['type' => 'video',   'url' => 'https://youtu.be/...', 'id' => 'xxxxxxxxxxx', 'thumb' => 'https://img.youtube.com/vi/.../hqdefault.jpg'],
+     *   ['type' => 'channel', 'url' => 'https://youtube.com/@...'],
+     * ]
+     *
+     * Link video → tampil sebagai thumbnail (klik play = popup embed).
+     * Link channel (@handle / /channel/ / /c/) → kartu channel (buka tab baru).
+     * Link lain yang tidak dikenali otomatis dilewati. Jumlah tak dibatasi.
+     */
+    public static function videoItems(): array
+    {
+        $items = [];
+
+        foreach (static::videoLinks() as $url) {
+            $id = static::extractYoutubeId($url);
+
+            if ($id !== null) {
+                $items[] = [
+                    'type'  => 'video',
+                    'url'   => 'https://www.youtube.com/watch?v=' . $id,
+                    'id'    => $id,
+                    'thumb' => 'https://img.youtube.com/vi/' . $id . '/hqdefault.jpg',
+                ];
+                continue;
+            }
+
+            if (static::isYoutubeChannelUrl($url)) {
+                $items[] = ['type' => 'channel', 'url' => $url];
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Apakah URL adalah link channel YouTube
+     * (bentuk @handle, /channel/UC..., atau /c/nama).
+     */
+    public static function isYoutubeChannelUrl(string $url): bool
+    {
+        return (bool) preg_match(
+            '%^https?://(www\.)?youtube\.com/(@[\w.\-]+|channel/[\w\-]+|c/[\w.\-]+)%i',
+            trim($url)
+        );
+    }
+
+    /**
+     * URL link channel YouTube pertama (null bila tidak ada) —
+     * dipakai tombol "Kunjungi Channel" di halaman khusus video.
+     */
+    public static function videoChannelUrl(): ?string
+    {
+        foreach (static::videoItems() as $item) {
+            if ($item['type'] === 'channel') {
+                return $item['url'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * URL embed YouTube untuk popup video (autoplay setelah diklik).
+     */
+    public static function videoEmbedUrl(string $id): string
+    {
+        return "https://www.youtube.com/embed/{$id}?autoplay=1&rel=0&modestbranding=1";
     }
 
     /**

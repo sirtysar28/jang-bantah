@@ -15,6 +15,8 @@
             </a>
             <div class="ms-auto d-flex gap-2">
                 <a href="{{ route('aset.publik') }}" class="btn btn-outline-light btn-sm px-3"><i class="fas fa-layer-group me-1"></i>Data Aset</a>
+                <a href="{{ route('berita.publik') }}" class="btn btn-outline-light btn-sm px-3"><i class="fas fa-newspaper me-1"></i>Berita</a>
+                <a href="{{ route('video.publik') }}" class="btn btn-outline-light btn-sm px-3"><i class="fab fa-youtube me-1"></i>Video</a>
                 <a href="{{ route('home') }}" class="btn btn-gold btn-sm px-3"><i class="fas fa-arrow-left me-1"></i>Kembali</a>
             </div>
         </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aset;
+use App\Models\Berita;
 use App\Models\Kecamatan;
 use App\Models\Opd;
 use Illuminate\Http\Request;
@@ -27,6 +28,11 @@ class HomeController
             ->take(3) // homepage hanya 3 terbaru — sisanya di halaman Data Aset
             ->get();
 
+        // Berita terbaru — 3 terbaru tampil di section bawah homepage,
+        // sisanya di halaman khusus /berita (dikelola Super Admin)
+        $beritaTerbaru = Berita::latest()->take(3)->get();
+        $totalBerita = Berita::count();
+
         return view('home', compact(
             'totalAset',
             'totalKecamatan',
@@ -36,13 +42,39 @@ class HomeController
             'totalLuas',
             'asetDipublikasikan',
             'sudahSertifikat',
-            'asets'
+            'asets',
+            'beritaTerbaru',
+            'totalBerita'
         ));
     }
 
     public function about()
     {
         return view('about');
+    }
+
+    /**
+     * Halaman publik "Berita" — kumpulan seluruh berita JANG BANTAH
+     * (dikelola Super Admin di menu Kelola Website; jumlah tak dibatasi).
+     * Berita terbaru tampil paling depan.
+     */
+    public function berita()
+    {
+        $beritas = Berita::latest()->paginate(9)->withQueryString();
+
+        return view('berita', compact('beritas'));
+    }
+
+    /**
+     * Halaman publik "Video" — kumpulan seluruh video YouTube JANG BANTAH
+     * (dikelola Super Admin di menu Kelola Website; jumlah tak dibatasi).
+     */
+    public function videos()
+    {
+        $videoItems = \App\WebsiteContent::videoItems();
+        $channelUrl = \App\WebsiteContent::videoChannelUrl();
+
+        return view('videos', compact('videoItems', 'channelUrl'));
     }
 
     /**

@@ -106,6 +106,8 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
                 <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('home') }}"><i class="fas fa-home me-1"></i>Beranda</a></li>
                 <li class="nav-item"><a class="nav-link nav-link-sd active" href="{{ route('aset.publik') }}"><i class="fas fa-layer-group me-1"></i>Data Aset</a></li>
+                <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('berita.publik') }}"><i class="fas fa-newspaper me-1"></i>Berita</a></li>
+                <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('video.publik') }}"><i class="fab fa-youtube me-1"></i>Video</a></li>
                 <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('about') }}"><i class="fas fa-info-circle me-1"></i>Tentang</a></li>
                 <li class="nav-item"><a class="nav-link nav-link-sd" href="{{ route('map.public') }}"><i class="fas fa-map-marked-alt me-1"></i>Peta Aset</a></li>
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
